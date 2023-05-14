@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hit Testing</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="text/javascript" src="js/paper.js"></script>
+    <script type="text/paperscript" canvas="canvas">
+
+
+        var hitOptions = {
+					segments: true,
+					stroke: true,
+					fill: true,
+					tolerance: 5
+				};
+        var bool = true;
+
+        var intersectionRadius = 10;
+        var strokeWidth = 3;
+
+        var knot = createBlob(view.size * 0.5, 200, 10);
+				knot.strokeColor = 'black';
+				knot.fillColor = 'white';
+				knot.strokeWidth = strokeWidth;
+
+        knot.data = {z: [], kind: 'knot'};
+
+        for (var i = 0; i < knot.curves.length; i++) {
+          knot.data.z.push(10*i);
+        }
+
+				var intersections = knot.getIntersections(knot);
+
+				function createBlob(center, maxRadius, points) {
+					var path = new Path();
+					path.closed = true;
+					for (var i = 0; i < points; i++) {
+						var delta = new Point({
+							length: (maxRadius * 0.5) + (Math.random() * maxRadius * 0.5),
+							angle: (360 / points) * i
+						});
+						path.add(center + delta);
+					}
+					path.smooth();
+					return path;
+				}
+
+				function showIntersections() {
+					intersections = knot.getCrossings(knot);
+
+
+					for (var i = 0; i < intersections.length; i++) {
+              var intersect = intersections[i];
+              // This would need to be two variables for multiple knots.
+              var path = intersect.path;
+              var center = intersect.point;
+
+              var i1 = intersect.curve.index;
+              var i2 = intersect.intersection.curve.index;
+
+              intersect.curve.data = {};
+              var z1 = path.data.z[i1];
+              var z2 = path.data.z[i2];
+
+              console.log(z1, z2);
+              var tangent = intersect.tangent * intersectionRadius;
+              if (z1 > z2) {
+                tangent = intersect.intersection.tangent * intersectionRadius;
+              }
+
+
+							new Path.Circle({
+									center: center,
+									radius: intersectionRadius,
+									fillColor: '#fff',
+                  data: {kind: 'intersection', i1: i1, i2: i2, path: path}
+							}).removeOnMove();
+
+              var path = new Path.Line({
+                  from: center + tangent,
+                  to: center - tangent,
+                  strokeColor: 'black',
+                  strokeWidth: strokeWidth,
+                  locked: true
+              }).removeOnMove();
+					}
+				}
+
+        var segment, path;
+        var movePath = false;
+        function onMouseDown(event) {
+
+            segment = path = null;
+            var hitResult = project.hitTest(event.point, hitOptions);
+            if (!hitResult)
+                return;
+
+            if (event.modifiers.shift) {
+                if (hitResult.type == 'segment') {
+                    hitResult.segment.remove();
+                };
+                return;
+            }
+
+            if (hitResult) {
+                path = hitResult.item;
+                if (hitResult.type == 'segment') {
+                    segment = hitResult.segment;
+                } else if (hitResult.type == 'stroke') {
+                    var location = hitResult.location;
+                    segment = path.insert(location.index + 1, event.point);
+                    // path.smooth();
+                }
+            }
+            movePath = hitResult.type == 'fill';
+            if (hitResult.item.data.kind == 'intersection') {
+              var path = hitResult.item.data.path;
+              var i1 = hitResult.item.data.i1;
+              var z1 = path.data.z[i1];
+              var z2 = path.data.z[hitResult.item.data.i2];
+
+              path.data.z[i1] = z1 > z2 ? z2-1 : z2 + 1;
+              console.log(z1);
+            }
+            else if (movePath)
+                console.log(hitResult.item.data);
+                project.activeLayer.addChild(hitResult.item);
+
+						showIntersections();
+        }
+
+        function onMouseMove(event) {
+            project.activeLayer.selected = false;
+            if (event.item)
+                event.item.selected = true;
+
+						showIntersections();
+        }
+
+        function onMouseDrag(event) {
+            if (segment) {
+                segment.point += event.delta;
+                // path.smooth();
+            } else if (path) {
+                path.position += event.delta;
+            }
+        }
+        function onKeyDown(event) {
+        	if(event.key == 'a') {
+        		bool = !bool;
+        	}
+        }
+
+        </script>
+</head>
+<body>
+    <canvas id="canvas" resize width="1000px;" height="500px;"></canvas>
+</body>
+</html>
