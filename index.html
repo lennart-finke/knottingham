@@ -113,7 +113,7 @@
                     // path.smooth();
                 }
             }
-            movePath = hitResult.type == 'fill';
+
             if (hitResult.item.data.kind == 'intersection') {
               var path = hitResult.item.data.path;
               var i1 = hitResult.item.data.i1;
@@ -123,9 +123,6 @@
               path.data.z[i1] = z1 > z2 ? z2-1 : z2 + 1;
               console.log(z1);
             }
-            else if (movePath)
-                console.log(hitResult.item.data);
-                project.activeLayer.addChild(hitResult.item);
 
 						showIntersections();
         }
