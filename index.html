@@ -2,35 +2,36 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Hit Testing</title>
+    <title>Knottingham</title>
     <link rel="stylesheet" href="../css/style.css">
     <script type="text/javascript" src="js/paper.js"></script>
     <script type="text/paperscript" canvas="canvas">
-
-
         var hitOptions = {
 					segments: true,
 					stroke: true,
+          handles: true,
 					fill: true,
 					tolerance: 5
 				};
-        var bool = true;
-
-        var intersectionRadius = 10;
+        var smooth = true;
+        var drawing = false;
+        var intersectionRadius = 0.2;
         var strokeWidth = 3;
+        var strokeColor = 'black';
+
 
         var knot = createBlob(view.size * 0.5, 200, 10);
-				knot.strokeColor = 'black';
-				knot.fillColor = 'white';
+				knot.strokeColor = strokeColor;
 				knot.strokeWidth = strokeWidth;
-
+        knot.selected = true;
         knot.data = {z: [], kind: 'knot'};
 
-        for (var i = 0; i < knot.curves.length; i++) {
+        for (var i = 0; i < 100; i++) {
           knot.data.z.push(10*i);
         }
-
-				var intersections = knot.getIntersections(knot);
+        var activeKnot = knot.clone();
+        knot.remove();
+				var intersections = activeKnot.getIntersections(activeKnot);
 
 				function createBlob(center, maxRadius, points) {
 					var path = new Path();
@@ -42,12 +43,12 @@
 						});
 						path.add(center + delta);
 					}
-					path.smooth();
+
 					return path;
 				}
 
 				function showIntersections() {
-					intersections = knot.getCrossings(knot);
+					intersections = activeKnot.getCrossings(activeKnot);
 
 
 					for (var i = 0; i < intersections.length; i++) {
@@ -63,38 +64,60 @@
               var z1 = path.data.z[i1];
               var z2 = path.data.z[i2];
 
-              console.log(z1, z2);
-              var tangent = intersect.tangent * intersectionRadius;
+              var curve = intersect.curve;
+
               if (z1 > z2) {
-                tangent = intersect.intersection.tangent * intersectionRadius;
+                var curve = intersect.intersection.curve;
               }
 
+              var segments = [curve.getPart(intersect.time - intersectionRadius, intersect.time + intersectionRadius).segment1.clone(), curve.getPart(intersect.time - intersectionRadius, intersect.time + intersectionRadius).segment2.clone()];
 
-							new Path.Circle({
-									center: center,
-									radius: intersectionRadius,
-									fillColor: '#fff',
+              var path = new Path({
+                  segments: segments,
+                  strokeColor: 'white',
+                  strokeWidth: strokeWidth * 5,
                   data: {kind: 'intersection', i1: i1, i2: i2, path: path}
-							}).removeOnMove();
+              }).removeOnMove().removeOnDrag();
 
-              var path = new Path.Line({
-                  from: center + tangent,
-                  to: center - tangent,
-                  strokeColor: 'black',
+              var path2 = new Path({
+                  segments: segments,
+                  strokeColor: strokeColor,
                   strokeWidth: strokeWidth,
                   locked: true
-              }).removeOnMove();
+              }).removeOnMove().removeOnDrag();
 					}
 				}
 
-        var segment, path;
+        var segment, path, handleIn, handleOut;
         var movePath = false;
+        var drawn;
         function onMouseDown(event) {
+            if (drawing) {
+              project.clear();
 
-            segment = path = null;
+              drawn = new Path({
+                  segments: [event.point],
+                  strokeColor: 'black',
+                  strokeWidth: strokeWidth,
+                  fullySelected: true,
+                  data: {z: []}
+              });
+
+              for (var i = 0; i < 100; i++) {
+                drawn.data.z.push(10*i);
+              }
+
+              return;
+            }
+
+
+            segment = handleIn = handleOut = null;
             var hitResult = project.hitTest(event.point, hitOptions);
-            if (!hitResult)
+
+            if (!hitResult) {
+                activeKnot.selected = false; // hacky!
                 return;
+            }
 
             if (event.modifiers.shift) {
                 if (hitResult.type == 'segment') {
@@ -104,54 +127,147 @@
             }
 
             if (hitResult) {
-                path = hitResult.item;
-                if (hitResult.type == 'segment') {
-                    segment = hitResult.segment;
-                } else if (hitResult.type == 'stroke') {
-                    var location = hitResult.location;
-                    segment = path.insert(location.index + 1, event.point);
-                    // path.smooth();
+
+                if (hitResult.item.data.kind == 'intersection') {
+                  activeKnot = hitResult.item.data.path;
+                  var i1 = hitResult.item.data.i1;
+                  var z1 = activeKnot.data.z[i1];
+                  var z2 = activeKnot.data.z[hitResult.item.data.i2];
+
+                  activeKnot.data.z[i1] = z1 > z2 ? z2-1 : z2 + 1;
                 }
-            }
+                else if (hitResult.type == 'segment') {
+                    activeKnot = hitResult.item;
+                    segment = hitResult.segment;
+                    activeKnot.selected = true;
+                } else if (hitResult.type == 'stroke') {
 
-            if (hitResult.item.data.kind == 'intersection') {
-              var path = hitResult.item.data.path;
-              var i1 = hitResult.item.data.i1;
-              var z1 = path.data.z[i1];
-              var z2 = path.data.z[hitResult.item.data.i2];
+                    activeKnot = hitResult.item;
+                    var location = hitResult.location;
+                    activeKnot.selected = true;
+                    segment = activeKnot.insert(location.index + 1, event.point);
+                    if (smooth) {
+                      console.log('hi!');
+                     activeKnot.segments[location.index + 1].smooth();}
+                }
+                else if (hitResult.type == 'handle-in') {
+                  handleIn = hitResult.segment;
+                }
+                else if (hitResult.type == 'handle-out') {
+                  handleOut = hitResult.segment;
+                }
 
-              path.data.z[i1] = z1 > z2 ? z2-1 : z2 + 1;
-              console.log(z1);
-            }
+                }
 
 						showIntersections();
         }
 
         function onMouseMove(event) {
-            project.activeLayer.selected = false;
-            if (event.item)
-                event.item.selected = true;
-
-						showIntersections();
-        }
-
-        function onMouseDrag(event) {
-            if (segment) {
-                segment.point += event.delta;
-                // path.smooth();
-            } else if (path) {
-                path.position += event.delta;
+            if (!drawing) {
+              showIntersections();
             }
         }
+        function onMouseUp(event) {
+          if (drawing) {
+            if (smooth) {drawn.smooth();}
+            drawn.simplify(10);
+          	drawn.fullySelected = true;
+
+            drawn.closed = true;
+            drawing = false;
+
+            activeKnot = drawn.clone();
+            drawn.remove();
+
+
+          }
+
+          else if (smooth) activeKnot.smooth();
+
+        }
+        function onMouseDrag(event) {
+            if (drawing) {
+              drawn.add(event.point);
+              return;
+            }
+
+            if (segment) {
+                segment.point += event.delta;
+
+                if (moveMode = 'pull') {
+                  segment.next.point += event.delta * 0.5;
+                  segment.previous.point += event.delta * 0.5;
+                }
+
+            }
+            else if (handleIn) {
+              handleIn.handleIn += event.delta;
+            }
+            else if (handleOut) {handleOut.handleOut += event.delta;}
+            if (smooth)
+             activeKnot.smooth();
+            showIntersections();
+        }
+
+        globals.smooth = function(){activeKnot.smooth();showIntersections();smooth = true;}
+        globals.straighten = function(){activeKnot.clearHandles();showIntersections();smooth = false;}
+        globals.toSVG = function(){return project.exportSVG(bounds='content');}
+        globals.select = function(){activeKnot.fullySelected = !activeKnot.fullySelected;}
+        globals.draw = function(){drawing = true; project.clear();smooth=false;}
         function onKeyDown(event) {
         	if(event.key == 'a') {
         		bool = !bool;
         	}
         }
 
+
         </script>
 </head>
 <body>
+
     <canvas id="canvas" resize width="1000px;" height="500px;"></canvas>
+    <div class="">
+      <button type="button" onclick="smooth()">Smooth!</button>
+      <button type="button" onclick="straighten()">Straighten!</button>
+      <button type="button" onclick="toSVG()">To SVG</button>
+      <button type="button" onclick="select()">Adjust Bezier</button>
+      <button type="button" onclick="draw()">Reset & Enter free Drawing</button>
+    </div>
+    <div class="">
+      <h5>Manual</h5>
+      <p></p>
+    </div>
+     <script type="text/javascript">
+      // To avoid race problem, the following should not be in window.onload as the PaperScript might run before.
+      window.globals = { a:50, b:-50 };
+
+      function draw() {window.globals.draw();}
+      function smooth() {
+        window.globals.smooth();
+      };
+      function select() {
+        window.globals.select();
+      }
+      function straighten() {
+        window.globals.straighten();
+      };
+      function toSVG() {
+        // Kindly provided by users senz, Dave and defghi 1977
+        // https://stackoverflow.com/questions/23218174/how-do-i-save-export-an-svg-file-after-creating-an-svg-with-d3-js-ie-safari-an
+        var svg =  window.globals.toSVG();
+
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        var svgData = svg.outerHTML;
+        var preface = '<?xml version="1.0" standalone="no"?>\r\n';
+        var svgBlob = new Blob([preface, svgData], {type:"image/svg+xml;charset=utf-8"});
+        var svgUrl = URL.createObjectURL(svgBlob);
+        var downloadLink = document.createElement("a");
+        downloadLink.href = svgUrl;
+        downloadLink.download = name;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+      </script>
 </body>
 </html>
