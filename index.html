@@ -13,7 +13,12 @@
 					fill: true,
 					tolerance: 5
 				};
-        var smooth = true;
+
+        project.view.pixelRatio = 1;
+        
+        var neighbors = 1;
+
+        var smooth = false;
         var drawing = false;
         var intersectionRadius = 0.2;
         var strokeWidth = 3;
@@ -65,12 +70,13 @@
               var z2 = path.data.z[i2];
 
               var curve = intersect.curve;
-
+              var time = intersect.time;
               if (z1 > z2) {
+                time = intersect.intersection.time;
                 var curve = intersect.intersection.curve;
               }
 
-              var segments = [curve.getPart(intersect.time - intersectionRadius, intersect.time + intersectionRadius).segment1.clone(), curve.getPart(intersect.time - intersectionRadius, intersect.time + intersectionRadius).segment2.clone()];
+              var segments = [curve.getPart(time - intersectionRadius, time + intersectionRadius).segment1.clone(), curve.getPart(time - intersectionRadius, time + intersectionRadius).segment2.clone()];
 
               var path = new Path({
                   segments: segments,
@@ -92,6 +98,7 @@
         var movePath = false;
         var drawn;
         function onMouseDown(event) {
+          console.log(event.point);
             if (drawing) {
               project.clear();
 
@@ -115,7 +122,7 @@
             var hitResult = project.hitTest(event.point, hitOptions);
 
             if (!hitResult) {
-                activeKnot.selected = false; // hacky!
+                activeKnot.selected = !activeKnot.selected;
                 return;
             }
 
@@ -146,9 +153,6 @@
                     var location = hitResult.location;
                     activeKnot.selected = true;
                     segment = activeKnot.insert(location.index + 1, event.point);
-                    if (smooth) {
-                      console.log('hi!');
-                     activeKnot.segments[location.index + 1].smooth();}
                 }
                 else if (hitResult.type == 'handle-in') {
                   handleIn = hitResult.segment;
@@ -190,16 +194,24 @@
               drawn.add(event.point);
               return;
             }
-
             if (segment) {
-                segment.point += event.delta;
+              segment.point += event.delta;
 
-                if (moveMode = 'pull') {
-                  segment.next.point += event.delta * 0.5;
-                  segment.previous.point += event.delta * 0.5;
-                }
-
-            }
+              var next = segment;
+              var previous = segment;
+              var delta = event.delta;
+              for (var i=0; i < neighbors; i++) {
+                next = next.next;
+                
+                delta *= 0.5;
+                previous = previous.previous;
+                next.point += delta;
+                previous.point += delta;
+                
+              }
+                
+              }
+            
             else if (handleIn) {
               handleIn.handleIn += event.delta;
             }
@@ -225,13 +237,14 @@
 </head>
 <body>
 
-    <canvas id="canvas" resize width="1000px;" height="500px;"></canvas>
+    <canvas id="canvas" width="1000px;" height="500px;"></canvas>
     <div class="">
       <button type="button" onclick="smooth()">Smooth!</button>
       <button type="button" onclick="straighten()">Straighten!</button>
       <button type="button" onclick="toSVG()">To SVG</button>
       <button type="button" onclick="select()">Adjust Bezier</button>
       <button type="button" onclick="draw()">Reset & Enter free Drawing</button>
+      <input type="range" min="1" max="3" value="1" class="slider" id="range" onchange="updateNeighbors(this.value);">
     </div>
     <div class="">
       <h5>Manual</h5>
