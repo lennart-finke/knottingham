@@ -14,20 +14,17 @@
 					tolerance: 5
 				};
 
-        project.view.pixelRatio = 1;
-        
         var neighbors = 1;
 
         var smooth = false;
         var drawing = false;
-        var intersectionRadius = 0.2;
-        var strokeWidth = 3;
+        var intersectionRadius = 1;
         var strokeColor = 'black';
 
 
         var knot = createBlob(view.size * 0.5, 200, 10);
 				knot.strokeColor = strokeColor;
-				knot.strokeWidth = strokeWidth;
+				knot.strokeWidth = window.globals.strokeWidth;
         knot.selected = true;
         knot.data = {z: [], kind: 'knot'};
 
@@ -69,26 +66,39 @@
               var z1 = path.data.z[i1];
               var z2 = path.data.z[i2];
 
-              var curve = intersect.curve;
-              var time = intersect.time;
-              if (z1 > z2) {
-                time = intersect.intersection.time;
-                var curve = intersect.intersection.curve;
-              }
+              var curve1 = intersect.curve;
+              var curve2 = intersect.intersection.curve;
+              var t1 = intersect.time;
+              var t2 = intersect.intersection.time;
 
-              var segments = [curve.getPart(time - intersectionRadius, time + intersectionRadius).segment1.clone(), curve.getPart(time - intersectionRadius, time + intersectionRadius).segment2.clone()];
+              var tangent1 = intersect.tangent;
+              var tangent2 = intersect.intersection.tangent;
+
+
+              if (z1 > z2) {
+                t1 = intersect.intersection.time;
+                t2 = intersect.time;
+                tangent1 = intersect.intersection.tangent;
+                tangent2 = intersect.tangent;
+                curve1 = intersect.intersection.curve;
+                curve2 = intersect.curve;
+              }
+              var radius = (15 * Math.abs(tangent1.dot(tangent2)) + 2 * globals.strokeWidth) / curve1.length;
+              var segments = [curve1.getPart(t1 - radius, t1 + radius).segment1.clone(), curve1.getPart(t1 - radius, t1 + radius).segment2.clone()];
+
 
               var path = new Path({
                   segments: segments,
                   strokeColor: 'white',
-                  strokeWidth: strokeWidth * 5,
+                  strokeWidth: window.globals.gapWidth * window.globals.strokeWidth,
                   data: {kind: 'intersection', i1: i1, i2: i2, path: path}
               }).removeOnMove().removeOnDrag();
 
-              var path2 = new Path({
+
+              var path3 = new Path({
                   segments: segments,
-                  strokeColor: strokeColor,
-                  strokeWidth: strokeWidth,
+                  strokeColor: window.globals.showIntersections ? 'red' : window.globals.strokeColor, //strokeColor,
+                  strokeWidth: window.globals.strokeWidth,
                   locked: true
               }).removeOnMove().removeOnDrag();
 					}
@@ -98,14 +108,13 @@
         var movePath = false;
         var drawn;
         function onMouseDown(event) {
-          console.log(event.point);
             if (drawing) {
               project.clear();
 
               drawn = new Path({
                   segments: [event.point],
                   strokeColor: 'black',
-                  strokeWidth: strokeWidth,
+                  strokeWidth: window.globals.strokeWidth,
                   fullySelected: true,
                   data: {z: []}
               });
@@ -129,12 +138,18 @@
             if (event.modifiers.shift) {
                 if (hitResult.type == 'segment') {
                     hitResult.segment.remove();
+                    console.log(hitResult.item.data.z);
+                    hitResult.item.data.z.splice(hitResult.segment.index, 1);
+                    console.log(hitResult.item.data.z);
+                }
+
+                else if (hitResult.item.data.kind == 'intersection') {
+                    console.log('hi!');
                 };
                 return;
             }
 
             if (hitResult) {
-
                 if (hitResult.item.data.kind == 'intersection') {
                   activeKnot = hitResult.item.data.path;
                   var i1 = hitResult.item.data.i1;
@@ -148,7 +163,6 @@
                     segment = hitResult.segment;
                     activeKnot.selected = true;
                 } else if (hitResult.type == 'stroke') {
-
                     activeKnot = hitResult.item;
                     var location = hitResult.location;
                     activeKnot.selected = true;
@@ -195,23 +209,23 @@
               return;
             }
             if (segment) {
+
               segment.point += event.delta;
 
               var next = segment;
               var previous = segment;
               var delta = event.delta;
-              for (var i=0; i < neighbors; i++) {
+              for (var i=0; i < window.globals.neighbors; i++) {
                 next = next.next;
-                
+
                 delta *= 0.5;
                 previous = previous.previous;
                 next.point += delta;
                 previous.point += delta;
-                
               }
-                
+
               }
-            
+
             else if (handleIn) {
               handleIn.handleIn += event.delta;
             }
@@ -221,9 +235,14 @@
             showIntersections();
         }
 
+
+        globals.updateStyle = function() {
+          activeKnot.strokeWidth = globals.strokeWidth;
+          activeKnot.strokeColor = globals.strokeColor;
+        }
         globals.smooth = function(){activeKnot.smooth();showIntersections();smooth = true;}
         globals.straighten = function(){activeKnot.clearHandles();showIntersections();smooth = false;}
-        globals.toSVG = function(){return project.exportSVG(bounds='content');}
+        globals.toSVG = function(){return project.exportSVG({bounds:'content'});}
         globals.select = function(){activeKnot.fullySelected = !activeKnot.fullySelected;}
         globals.draw = function(){drawing = true; project.clear();smooth=false;}
         function onKeyDown(event) {
@@ -239,12 +258,16 @@
 
     <canvas id="canvas" width="1000px;" height="500px;"></canvas>
     <div class="">
-      <button type="button" onclick="smooth()">Smooth!</button>
-      <button type="button" onclick="straighten()">Straighten!</button>
+      <button type="button" onclick="window.globals.smooth()">Smooth!</button>
+      <button type="button" onclick="window.globals.straighten()">Straighten!</button>
       <button type="button" onclick="toSVG()">To SVG</button>
-      <button type="button" onclick="select()">Adjust Bezier</button>
-      <button type="button" onclick="draw()">Reset & Enter free Drawing</button>
-      <input type="range" min="1" max="3" value="1" class="slider" id="range" onchange="updateNeighbors(this.value);">
+      <button type="button" onclick="window.globals.select()">Select / Unselect</button>
+      <button type="button" onclick="window.globals.draw();">Reset & Enter free Drawing</button>
+      <p>Drag k neighbors: <input type="range" min="0" max="3" value="0" class="slider"  onchange="window.globals.neighbors = this.value;"></p>
+      <p>Gap Width: <input type="range" min="2" max="10" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"></p>
+      <p>Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"></p>
+      <p>Show Intersections: <input type="checkbox" checked="true" onchange="window.globals.showIntersections = this.checked;"></p>
+
     </div>
     <div class="">
       <h5>Manual</h5>
@@ -252,18 +275,8 @@
     </div>
      <script type="text/javascript">
       // To avoid race problem, the following should not be in window.onload as the PaperScript might run before.
-      window.globals = { a:50, b:-50 };
+      window.globals = {neighbors:0, strokeWidth:5, gapWidth:5, strokeColor:'black', showIntersections:true};
 
-      function draw() {window.globals.draw();}
-      function smooth() {
-        window.globals.smooth();
-      };
-      function select() {
-        window.globals.select();
-      }
-      function straighten() {
-        window.globals.straighten();
-      };
       function toSVG() {
         // Kindly provided by users senz, Dave and defghi 1977
         // https://stackoverflow.com/questions/23218174/how-do-i-save-export-an-svg-file-after-creating-an-svg-with-d3-js-ie-safari-an
