@@ -9,11 +9,15 @@ You can:
 
 <img src="https://fi-le.net/images/knot.svg">
 
-### Heritage
+You can give it a go yourself over [here](https://fi-le.net/knottingham).
+
+ **Heritage**
+ ---
 **Knottingham** was inspired by two wonderful tools for drawing and identifying knots, namely the [Knot Identification Tool](https://joshuahhh.com/projects/kit/) by Joshua Horowitz and [KnotFolio](https://kmill.github.io/knotfolio/index.html) by Kyle Miller. 
 Furthermore, many thanks to [paper.js](https://github.com/paperjs/paper.js)! Other than this great drawing library, **Knottingham** is vanilla Javascript.
 
-### In the Future
+ **In the Future**
+ ---
 These features are planned:
 
 *   Loading JSON
@@ -24,5 +28,9 @@ These features are planned:
 *   Some more styling options
 *   Undoing
 *   Multiple intertwined knots
+
+ **License**
+ ---
+**Knottingham** is free software and licensed under MIT.
 
 Any and all feedback is appreciated! You can mail to [developer/at/fi-le.net](mailto:developer/at/fi-le.net).
