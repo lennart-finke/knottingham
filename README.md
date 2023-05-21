@@ -5,7 +5,7 @@ You can:
 - Adjust it with Bezier control points
 - and Export it to SVG!
 
-<img src="https://fi-le.net/images/conway.png">
+<img src="https://fi-le.net/images/conway.svg">
 
 ### Heritage
 **Knottingham** was inspired by two wonderful tools for drawing and identifying knots, namely the [Knot Identification Tool](https://joshuahhh.com/projects/kit/) by Joshua Horowitz and [KnotFolio](https://kmill.github.io/knotfolio/index.html) by Kyle Miller. 
