@@ -1,3 +1,5 @@
+
+
 ## Knottingham
 is a tool that lets you draw and manipulate knot diagrams, sporting a clean yet somewhat hand-drawn look. 
 You can:
@@ -5,11 +7,11 @@ You can:
 - Adjust it with Bezier control points
 - and Export it to SVG!
 
-<img src="https://fi-le.net/images/conway.svg">
+<img src="https://fi-le.net/images/knot.svg">
 
 ### Heritage
 **Knottingham** was inspired by two wonderful tools for drawing and identifying knots, namely the [Knot Identification Tool](https://joshuahhh.com/projects/kit/) by Joshua Horowitz and [KnotFolio](https://kmill.github.io/knotfolio/index.html) by Kyle Miller. 
-Furthermore, many thanks to [paper.js](https://github.com/paperjs/paper.js)! This wouldn't be possible without its powerful features. Other than that, **Knottingham** is vanilla Javascript.
+Furthermore, many thanks to [paper.js](https://github.com/paperjs/paper.js)! Other than this great drawing library, **Knottingham** is vanilla Javascript.
 
 ### In the Future
 These features are planned:
