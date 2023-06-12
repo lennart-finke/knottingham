@@ -6,6 +6,8 @@
     <meta author content="">
     <link rel="stylesheet" href="../css/style.css">
     <script type="text/javascript" src="js/paper.js"></script>
+    <script src="js/nerdamer.core.js"></script> <!-- assuming you've saved the file in the root of course -->
+    <script src="js/Algebra.js"></script>
     <script type="text/paperscript" canvas="canvas">
         // Some functions in global scope to interoperate with the
         // non-paperscript code:
@@ -65,15 +67,17 @@
         var activeKnot = knot.clone();
         knot.remove();
 
+        // We display this pretty Conway knot as a default
         var conway = '[["Path",{"applyMatrix":true,"data":{"z":[120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990]},"segments":[[[421.28466,311.56804],[-21.988,34.57573],[21.988,-34.57573]],[[541.15302,199.60118],[-42.61808,20.11581],[42.61808,-20.11581]],[[617.04883,224.11296],[-3.30386,-27.58387],[3.30386,27.58387]],[[577.8222,310.56682],[19.16435,-20.74597],[-19.16435,20.74597]],[[530.24102,334.85465],[13.45424,-0.17394],[-13.45424,0.17394]],[[478.36779,303.2304],[26.47305,28.77815],[-26.47305,-28.77815]],[[414.19627,190.11536],[-3.3017,29.80063],[3.3017,-29.80063]],[[493.65076,173.74515],[-28.54922,-18.49542],[28.54922,18.49542]],[[550.60688,262.40743],[-18.91203,-28.11102],[18.91203,28.11102]],[[608.26824,331.27713],[-10.42014,-26.59249],[10.42014,26.59249]],[[581.63596,413.43788],[29.56351,-16.54948],[-29.56351,16.54948]],[[489.83504,395.17333],[10.59931,28.8942],[-10.59931,-28.8942]],[[514.97928,277.83947],[-5.30411,36.57109],[5.30411,-36.57109]],[[467.17824,217.31252],[33.27391,2.68226],[-33.27391,-2.68226]],[[366.41896,264.08378],[20.76878,-33.54446],[-20.76878,33.54446]],[[371.42595,384.71931],[-20.59676,-35.91124],[20.59676,35.91124]],[[462.11965,437.62161],[-34.08242,3.6516],[34.08242,-3.6516]],[[529.96498,384.4633],[-1.61257,21.56086],[1.61257,-21.56086]],[[454.88923,345.90073],[47.76312,1.82584],[-47.76312,-1.82584]],[[322.21835,377.89199],[18.30672,-22.29293],[-18.30672,22.29293]],[[358.58189,433.71775],[-24.68264,-0.47114],[24.68264,0.47114]],[[406.35977,380.17742],[-3.71756,21.89207],[3.71756,-21.89207]]],"closed":true,"strokeColor":[0,0,0],"strokeWidth":5}],[[["Point",354.29196,296.73364],["Point",400.34859,268.75223],["Point",388.16833,221.33261],["Point",383.31948,123.98353],["Point",400.34859,268.75223],["Point",400.34859,268.75223],["Point",386.01652,273.14906],["Point",386.75007,272.96203],["Point",386.75007,272.96203],["Point",385.77298,264.5154],["Point",385.77298,264.5154]],[true,false,true,false,true,true,true,false,false,true,false]]]';
         globals.fromJSON(conway);
 
 				var intersections = activeKnot.getIntersections(activeKnot);
 
 				function showIntersections() {
-
 					intersections = activeKnot.getCrossings(activeKnot);
-          // Map observed intersections to previous intersections
+
+          // Let's map observed intersections to previous intersections
+          // First, the case when an intersection was added:
           if (intersectionWatcher[0].length < intersections.length) {
             var bools = Array(intersections.length).fill(false);
 
@@ -97,11 +101,28 @@
             intersectionWatcher[1] = bools;
           }
 
-          else if (intersectionWatcher[0].length > intersections.length) {
-            for (var i = 0; i < intersectionWatcher[0].length - intersections.length; i++) {
-              intersectionWatcher[0].splice(0,1);
-              intersectionWatcher[1].splice(0,1);
+          // Next, the case when intersections were deleted:
+          else if (intersectionWatcher[0].length >= intersections.length) {
+            var bools = Array(intersectionWatcher[0].length).fill(false);
+
+            for (var i = 0; i < intersections.length; i++) {
+              var intersection = intersections[i].point;
+
+              // we calculate the index in //intersectionWatcher[0]// of the point that is closest to //intersection//.
+              var min = 99999999999999;
+              var min_index = 0;
+              for (var k = 0; k < intersectionWatcher[0].length; k++) {
+                  var distance = intersectionWatcher[0][k].getDistance(intersection);
+                  if (distance < min) {
+                    min = distance;
+                    min_index = k;
+                  }
+              }
+              // We copy the over-under boolean from this minimal value
+              bools[i] = intersectionWatcher[1][min_index];
             }
+
+            intersectionWatcher[1] = bools;
           }
 
           for (var i = 0; i < intersections.length; i++) {
@@ -158,10 +179,73 @@
 					}
 				}
 
+        function alexanderPolynomial() {
+          showIntersections();
+          intersections = activeKnot.getCrossings(activeKnot);
+          if (intersections.length == 0) {
+            return '0';
+          }
+          strandTimes = [];
+
+          for (var i = 0; i < intersections.length; i++) {
+              var intersect = intersections[i];
+              if (intersectionWatcher[1][i]) {
+                strandTimes.push(intersect.time);
+              }
+              else {
+                strandTimes.push(intersect.intersection.time);
+              }
+          }
+          strandTimes.sort();
+
+          function getStrand(time) {
+            if (time <= strandTimes[0] || time >= strandTimes[strandTimes.length - 1]) {
+              return 0;
+            }
+            for (var k = 1; k < strandTimes.length; k++) {
+              if (time <= strandTimes[k]) {
+                return k;
+              }
+            }
+          }
+
+          var str = 'imatrix(';
+          nerdamer.setVar('M',  str.concat(intersections.length.toString(), ')'));
+
+          str = 'matset(M,';
+          for (var i = 0; i < intersections.length; i++) {
+            var intersect = intersections[i];
+            over = getStrand(intersect.time);
+            under1 = getStrand(intersect.intersection.time);
+
+            // Swap over and under depending on whether the crossing goes over or under
+            if (intersectionWatcher[1][i]) {
+              over = [under1, under1 = over][0];
+            }
+            under2 = (under1 + 1) % (intersections.length);
+
+            // The entries swap if the crossing is left or right handed
+            var inverted = intersect.tangent.cross(intersect.intersection.tangent) < 0;
+            if (inverted) {under2 = [under1, under1 = under2][0]; console.log("left handed!")}
+            if (intersectionWatcher[1][i]) under2 = [under1, under1 = under2][0];
+
+            console.log(over, under1, under2);
+            nerdamer.setVar('M', 'matset(M,' + i + ',' + over + ',matget(M,' + i + ',' + over + ')+ (1-x))');
+            nerdamer.setVar('M', 'matset(M,' + i + ',' + under1 + ',matget(M,' + i + ',' + under1 + ')-1)');
+            nerdamer.setVar('M', 'matset(M,' + i + ',' + under2 + ',matget(M,' + i + ',' + under2 + ')+x)');
+
+          }
+          console.log(nerdamer('M').toString());
+          // var det = nerdamer('simplify(determinant(M))');
+          // console.log(det.toString());
+
+        }
+
         var segment, path, handleIn, handleOut;
         var movePath = false;
         var drawn;
         function onMouseDown(event) {
+
             if (drawing) {
               project.clear();
 
@@ -172,10 +256,6 @@
                   fullySelected: true,
                   data: {z: []}
               });
-
-              for (var i = 0; i < 100; i++) {
-                drawn.data.z.push(10*i);
-              }
 
               return;
             }
@@ -283,6 +363,7 @@
         function onKeyDown(event) {
           var delta = new Point(0,0);
         	if(event.key == 'a') {
+            alexanderPolynomial();
         		delta.x -= speed;
         	}
         	else if(event.key == 'd') {
@@ -353,7 +434,6 @@
       These features are planned:
       <ul>
         <li>Loading JSON</li>
-        <li>Properly permanent crossing topology</li>
         <li>Classification of knots through knot invariants (for single knots)</li>
         <li>Exporting to TikZ</li>
         <li>Non-Reidemeister Move-Detection</li>
