@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="../css/style.css">
     <script type="text/javascript" src="js/paper.js"></script>
     <script src="js/BigInteger.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <script type="text/javascript">
         // Some math copied 1:1 from https://joshuahhh.com/projects/kit/
 
@@ -77,7 +80,6 @@
 
     </script>
     <script type="text/paperscript" canvas="canvas">
-
         // Some functions in global scope to interoperate with the
         // non-paperscript code:
         globals.updateStyle = function() {
@@ -137,12 +139,16 @@
         knot.remove();
 
         // We display this pretty Conway knot as a default
-        var conway = '[["Path",{"applyMatrix":true,"data":{"z":[120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990]},"segments":[[[421.28466,311.56804],[-21.988,34.57573],[21.988,-34.57573]],[[541.15302,199.60118],[-42.61808,20.11581],[42.61808,-20.11581]],[[617.04883,224.11296],[-3.30386,-27.58387],[3.30386,27.58387]],[[577.8222,310.56682],[19.16435,-20.74597],[-19.16435,20.74597]],[[530.24102,334.85465],[13.45424,-0.17394],[-13.45424,0.17394]],[[478.36779,303.2304],[26.47305,28.77815],[-26.47305,-28.77815]],[[414.19627,190.11536],[-3.3017,29.80063],[3.3017,-29.80063]],[[493.65076,173.74515],[-28.54922,-18.49542],[28.54922,18.49542]],[[550.60688,262.40743],[-18.91203,-28.11102],[18.91203,28.11102]],[[608.26824,331.27713],[-10.42014,-26.59249],[10.42014,26.59249]],[[581.63596,413.43788],[29.56351,-16.54948],[-29.56351,16.54948]],[[489.83504,395.17333],[10.59931,28.8942],[-10.59931,-28.8942]],[[514.97928,277.83947],[-5.30411,36.57109],[5.30411,-36.57109]],[[467.17824,217.31252],[33.27391,2.68226],[-33.27391,-2.68226]],[[366.41896,264.08378],[20.76878,-33.54446],[-20.76878,33.54446]],[[371.42595,384.71931],[-20.59676,-35.91124],[20.59676,35.91124]],[[462.11965,437.62161],[-34.08242,3.6516],[34.08242,-3.6516]],[[529.96498,384.4633],[-1.61257,21.56086],[1.61257,-21.56086]],[[454.88923,345.90073],[47.76312,1.82584],[-47.76312,-1.82584]],[[322.21835,377.89199],[18.30672,-22.29293],[-18.30672,22.29293]],[[358.58189,433.71775],[-24.68264,-0.47114],[24.68264,0.47114]],[[406.35977,380.17742],[-3.71756,21.89207],[3.71756,-21.89207]]],"closed":true,"strokeColor":[0,0,0],"strokeWidth":5}],[[["Point",354.29196,296.73364],["Point",400.34859,268.75223],["Point",388.16833,221.33261],["Point",383.31948,123.98353],["Point",400.34859,268.75223],["Point",400.34859,268.75223],["Point",386.01652,273.14906],["Point",386.75007,272.96203],["Point",386.75007,272.96203],["Point",385.77298,264.5154],["Point",385.77298,264.5154]],[true,false,true,false,true,true,true,false,false,true,false]]]';
+        var conway = '[["Path",{"applyMatrix":true,"data":{"z":[120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990]},"segments":[[[421.28466,311.56804],[-21.98799,34.57871],[21.98799,-34.57871]],[[541.15302,199.60118],[-42.61808,20.11501],[42.61808,-20.11501]],[[617.04883,224.11296],[-3.30386,-27.58365],[3.30386,27.58365]],[[577.8222,310.56682],[19.16436,-20.74603],[-19.16436,20.74603]],[[530.24102,334.85465],[13.45425,-0.17392],[-13.45425,0.17392]],[[478.36779,303.2304],[26.47305,28.77815],[-26.47305,-28.77815]],[[414.19627,190.11536],[-3.3017,29.80063],[3.3017,-29.80063]],[[493.65076,173.74515],[-28.54922,-18.49541],[28.54922,18.49541]],[[550.60688,262.40743],[-18.91202,-28.11106],[18.91202,28.11106]],[[608.26824,331.27713],[-10.42017,-26.59232],[10.42017,26.59232]],[[581.63596,413.43788],[29.5636,-16.5501],[-29.5636,16.5501]],[[489.83504,395.17333],[10.59895,28.89652],[-10.59895,-28.89652]],[[514.97928,277.83947],[-5.30273,36.56243],[5.30273,-36.56243]],[[467.17824,217.31252],[33.26876,2.71457],[-33.26876,-2.71457]],[[366.41896,264.08378],[20.78802,-33.66503],[-20.78802,33.66503]],[[371.42595,384.71931],[-20.66856,-35.46123],[20.66856,35.46123]],[[462.11965,437.62161],[-33.81448,1.97211],[33.81448,-1.97211]],[[528.96498,390.4633],[-1.61257,21.82881],[1.61257,-21.82881]],[[454.88923,344.90073],[47.49517,3.43354],[-47.49517,-3.43354]],[[322.21835,377.89199],[18.37851,-22.99166],[-18.37851,22.99166]],[[358.58189,433.71775],[-24.70188,-0.28391],[24.70188,0.28391]],[[406.35977,380.17742],[-3.7124,21.84188],[3.7124,-21.84188]]],"closed":true,"strokeColor":[0,0,0],"strokeWidth":5}],[[["Point",452.37472,271.95975],["Point",498.30283,228.00243],["Point",523.24666,209.67566],["Point",586.10668,300.81536],["Point",501.39462,324.86085],["Point",422.07864,223.3116],["Point",513.22797,417.04625],["Point",492.48581,352.25192],["Point",359.28646,356.59666],["Point",393.06553,411.55003],["Point",407.33358,346.33317]],[true,false,true,false,true,true,true,false,false,true,false]]]'
         globals.fromJSON(conway);
+
+        // We add a second layer to display intersections
+        var intersectionLayer = new Layer();
 
 				var intersections = activeKnot.getIntersections(activeKnot);
 
 				function showIntersections() {
+          intersectionLayer.removeChildren();
 					intersections = activeKnot.getCrossings(activeKnot);
 
           // Let's map observed intersections to previous intersections
@@ -230,21 +236,19 @@
               var radius = (15 * Math.abs(tangent1.dot(tangent2)) + 2 * globals.strokeWidth) / curve1.length;
               var segments = [curve1.getPart(t1 - radius, t1 + radius).segment1.clone(), curve1.getPart(t1 - radius, t1 + radius).segment2.clone()];
 
-
               var path = new Path({
                   segments: segments,
                   strokeColor: 'white',
                   strokeWidth: window.globals.gapWidth * window.globals.strokeWidth,
                   data: {kind: 'intersection', i1: i, path: path}
-              }).removeOnMove().removeOnDrag();
+              });
 
-
-              var path3 = new Path({
+              var path2 = new Path({
                   segments: segments,
                   strokeColor: window.globals.showIntersections ? 'red' : window.globals.strokeColor,
                   strokeWidth: window.globals.strokeWidth,
                   locked: true
-              }).removeOnMove().removeOnDrag();
+              });
 					}
 				}
 
@@ -265,7 +269,7 @@
                 underTimes.push(intersect.intersection.time + intersect.intersection.index);
               }
           }
-          underTimes.sort();
+          underTimes.sort(function(a, b){return a-b});
 
           function getStrand(time) {
             if (time <= underTimes[0] || time > underTimes[underTimes.length - 1]) {
@@ -293,25 +297,57 @@
             // The entries swap if the crossing is left or right handed
             var inverted = intersect.tangent.cross(intersect.intersection.tangent) < 0;
             if (intersectionWatcher[1][i]) under2 = [under1, under1 = under2][0];
-            if (inverted) {under2 = [under1, under1 = under2][0]; console.log("left handed!")}
+            if (inverted) {under2 = [under1, under1 = under2][0];}
             row = Array(intersections.length).fill(0);
             row[over] += polyToInt([1,-1]);
             row[under1] += polyToInt([-1]);
             row[under2] += polyToInt([0,1]);
-
             matrix.push(row.slice(0,intersections.length - 1));
           }
+          
+          var polynomial = intToPoly(det(matrix));
+          var out = [];
+          var flag = 0;
+          for (var k = 0; k < polynomial.length; k++) {
+            var coeff = polynomial[k];
+            if (flag == 0) {
+              if (coeff != 0) {
+                flag = coeff > 0 ? 1 : -1;
+                out.push(flag * coeff);
+              }
+            }
 
-          return intToPoly(det(matrix));
+            else {
+              out.push(flag * coeff);
+            }            
+          }
+          
+          return out;
+        }
+
+        function alexanderString() {
+          var p = alexanderPolynomial();
+          var out = "\\( p(t) = ";
+          var l = p.length;
+          for (var k = 0; k < l; k++) {
+            var coeff = p[k];
+            var exponent = (l - 1) / 2 - k;
+            console.log(exponent);
+            out += (coeff > 0 && k != 0 ? "+" : "");
+            out += coeff.toString();
+            out += exponent != 0 ? "t^{" + exponent.toString() + "}" : "";
+          }
+          out += "\\)";
+          console.log(out);
+          return out
         }
 
         var segment, path, handleIn, handleOut;
         var movePath = false;
         var drawn;
         function onMouseDown(event) {
-
             if (drawing) {
-              project.clear();
+              project.clear(); // This would be different for more than one knot
 
               drawn = new Path({
                   segments: [event.point],
@@ -320,6 +356,7 @@
                   fullySelected: true,
                   data: {z: []}
               });
+              intersectionLayer = new Layer();
 
               return;
             }
@@ -392,9 +429,8 @@
           }
 
           else if (globals.smooth) activeKnot.smooth('geometric', 1);
-          polynomial.innerHTML = alexanderPolynomial();
-          console.log(alexanderPolynomial());
-
+          polynomial.innerHTML = alexanderString();
+          MathJax.typeset();
         }
         function onMouseDrag(event) {
             if (drawing) {
@@ -424,8 +460,13 @@
             }
             else if (handleOut) {handleOut.handleOut += event.delta;}
             showIntersections();
-        }
 
+            polynomial.innerHTML = alexanderString();
+            MathJax.typeset();
+        }
+        polynomial.innerHTML = alexanderString();
+        MathJax.typeset();
+        
         var speed = 10;
         var angularSpeed = 3;
         function onKeyDown(event) {
@@ -450,15 +491,19 @@
           else if(event.key == 'q') {
         		activeKnot.rotate(-angularSpeed);
         	}
+
+          showIntersections();
         }
 
         </script>
 </head>
 <body>
     <div style="text-align:center;">
+      
       <canvas id="canvas" width="1000px;" height="500px;" ></canvas>
       <div style="margin:5%;">
-        <p id="alexanderPolynomial"></p>
+        <p><b>Alexander Polynomial: <span id="alexanderPolynomial"></span></b></p>
+        
         <button type="button" onclick="toSVG()">Export to SVG</button>
         <button type="button" onclick="toJSON()">Export to JSON</button>
         <button type="button" onclick="window.globals.select()">Select / Unselect everything</button>
