@@ -18,7 +18,7 @@
 
       <canvas id="canvas" width="1000px;" height="450px;"></canvas>
       <div style="margin:5%;">
-        <p><b>Alexander Polynomial: <span id="alexanderPolynomial"></span></b></p>
+        <p><b>Alexander Polynomial: <span id="alexanderPolynomial"></span>   |   Candidates with  \(<10\) Crossings: <span id="candidates"></span> </p>
         <hr>
         <p>
           <button type="button" onclick="window.globals.draw(); smoothing.checked = false;"><b>Draw from Scratch</b></button>
@@ -33,7 +33,7 @@
 
         <p>Drag Neighboring Points: <input type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"></p>
 
-
+        
         <p><b>Styling:</b><br>
           Gap Width: <input type="range" min="2" max="5" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
           Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
@@ -44,7 +44,9 @@
         <p><b>Exporting:</b>
           <button type="button" onclick="toSVG()">Export to SVG</button>
           <button type="button" onclick="toJSON()">Export to JSON</button>
-          <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!)'">Export to TikZ</button>
+          <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!)'">Export to TikZ</button> <br>
+          <b>Importing JSON:</b> <input type="file" id="file" accept=".JSON,.json,.knottingham"name="Load a JSON file" oninput="readJSON(this.files[0])">
+
         </p>
       </div>
     </div>
@@ -56,8 +58,8 @@
         <li>Create a knot by:</li>
         <ul>
           <li>Clicking on segments to add new nodes</li>
-          <li>Clicking and dragging nodes to move them (drag k neighbors is useful to rescue nodes from below crossings)</li>
-          <li>and finally clicking on the automatically detected crossings to switch them. (sadly a little volatile at the moment)</li>
+          <li>Clicking and dragging nodes to move them (you can use 'Drag Neighbors' to rescue nodes from below crossings)</li>
+          <li>and finally clicking on the automatically detected crossings to switch them.</li>
           <li>or importing JSON</li>
           <li><b>or clicking on 'Drawing' to draw a new knot from scratch</b>!</li>
         </ul>
@@ -82,7 +84,7 @@
 
       These features are planned:
       <ul>
-        <li>Non-Reidemeister Move-Detection</li>
+        <li>Complete Non-Reidemeister Move-Detection</li>
         <li>Some more styling options</li>
       </ul>
       <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
@@ -90,6 +92,7 @@
      <script type="text/javascript">
       window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:true};
       var polynomial = document.getElementById('alexanderPolynomial');
+      var candidates = document.getElementById('candidates');
       var smoothing = document.getElementById('smoothing');
 
       function straighten() {
@@ -100,6 +103,14 @@
       function toTikz() {
         var string =  window.globals.toTikz();
         navigator.clipboard.writeText(string);
+      }
+
+      function readJSON(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          window.globals.fromJSON(e.target.result);
+        };
+        reader.readAsText(file);
       }
 
       function toSVG() {
