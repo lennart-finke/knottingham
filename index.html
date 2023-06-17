@@ -3,518 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <title>🪢 Knottingham 🪢</title>
-    <meta author content="">
-    <link rel="stylesheet" href="../css/style.css">
-    <script type="text/javascript" src="js/paper.js"></script>
-    <script src="js/BigInteger.min.js"></script>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <meta author content="fi-le">
+    <script type="text/javascript" src="lib/paper.js"></script>
+    <script type="text/javascript" src="lib/BigInteger.min.js"></script>
+    <script type="text/javascript" src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
-    <script type="text/javascript">
-        // Some math copied 1:1 from https://joshuahhh.com/projects/kit/
 
-        function polyToInt(l, base = 1000) {
-            var toReturn = bigInt(0);
-            for (var i = 0; i < l.length; i++) {
-              var coeff = l[i];
-              toReturn = bigInt(base).pow(i).times(coeff).plus(toReturn);
-            }
-            return toReturn;
-        }
-
-        function intToPoly(num, base = 1000) {
-          num = bigInt(num);
-          var sign = num < 0 ? -1 : 1;
-          num = num.times(sign);
-
-          var b = [];
-          while (num.greater(0)) {
-            var divmod = num.divmod(base);
-            b.push(divmod.remainder.toJSNumber());
-            num = divmod.quotient;
-          }
-          b.push(0);
-
-          for (var i = 0; i < b.length; i++) {
-            if (b[i] >= base / 2) {
-              b[i] = b[i] - base;
-              b[i + 1] = b[i + 1] + 1;
-            }
-            b[i] *= sign;
-          }
-          if (b[b.length - 1] == 0) {
-            b.pop();
-          }
-
-          return b;
-        }
-
-        function det(matrix) {
-          const size = matrix.length;
-          let sum = bigInt(0);
-          if (size === 1) {
-            return matrix[0][0];
-          }
-
-          for (let i = 0; i < size; i++) {
-            if (bigInt(matrix[0][i]).notEquals(0)) {
-              // construct minor
-              const smaller = [];
-              for (let a = 1; a < size; a++) {
-                smaller[a - 1] = [];
-                for (let b = 0; b < size; b++) {
-                  if (b < i) {
-                    smaller[a - 1][b] = matrix[a][b];
-                  } else if (b > i) {
-                    smaller[a - 1][b - 1] = matrix[a][b];
-                  }
-                }
-              }
-              // sign of minor
-              const s = i % 2 === 0 ? 1 : -1;
-              sum = bigInt(matrix[0][i]).times(s).times(det(smaller)).plus(sum);
-            }
-          }
-          return sum;
-        }
-
-    </script>
-    <script type="text/paperscript" canvas="canvas">
-        // Some functions in global scope to interoperate with the
-        // non-paperscript code:
-        globals.updateStyle = function() {
-          activeKnot.strokeWidth = globals.strokeWidth;
-          activeKnot.strokeColor = globals.strokeColor;
-        }
-        globals.straighten = function(){activeKnot.clearHandles();showIntersections();smooth = false;}
-        globals.toSVG = function(){return project.exportSVG({bounds:'content'});}
-        globals.toJSON = function() { // Does not work for multiple knots
-          var obj = activeKnot.exportJSON({asString:false});
-          return JSON.stringify([obj, intersectionWatcher]);
-        }
-        globals.fromJSON = function(jsonString) { // Does not work for multiple knots
-          var obj = JSON.parse(jsonString);
-          activeKnot.importJSON(JSON.stringify(obj[0]));
-          var intersections = obj[1];
-          intersectionWatcher = [[],[]];
-          for (var k = 0; k < intersections[1].length; k++) {
-            intersectionWatcher[1][k] = intersections[1][k];
-            intersectionWatcher[0][k] = new Point(intersections[0][k][1], intersections[0][k][2]);
-          }
-        }
-        globals.select = function(){
-          var bool = activeKnot.fullySelected;
-          activeKnot.fullySelected = false;
-          activeKnot.fullySelected = !bool;
-          hitOptions.handles = true;
-        }
-        globals.draw = function(){drawing = true; project.clear();globals.smooth=false;}
-
-        var hitOptions = {
-					segments: true,
-					stroke: true,
-          handles: false,
-					fill: true,
-					tolerance: 5
-				};
-
-        var intersectionWatcher = [[],[]];
-
-        var neighbors = 1;
-
-        var drawing = false;
-        var intersectionRadius = 1;
-        var strokeColor = 'black';
-
-
-        var knot = new Path();
-				knot.strokeColor = strokeColor;
-				knot.strokeWidth = window.globals.strokeWidth;
-        //knot.shadowColor = new Color(0, 0, 0);
-        //knot.shadowOffset = new Point(6, 6)
-        //knot.shadowBlur = 10;
-        knot.selected = true;
-        knot.data = {kind: 'knot'};
-        var activeKnot = knot.clone();
-        knot.remove();
-
-        // We display this pretty Conway knot as a default
-        var conway = '[["Path",{"applyMatrix":true,"data":{"z":[120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990]},"segments":[[[421.28466,311.56804],[-21.98799,34.57871],[21.98799,-34.57871]],[[541.15302,199.60118],[-42.61808,20.11501],[42.61808,-20.11501]],[[617.04883,224.11296],[-3.30386,-27.58365],[3.30386,27.58365]],[[577.8222,310.56682],[19.16436,-20.74603],[-19.16436,20.74603]],[[530.24102,334.85465],[13.45425,-0.17392],[-13.45425,0.17392]],[[478.36779,303.2304],[26.47305,28.77815],[-26.47305,-28.77815]],[[414.19627,190.11536],[-3.3017,29.80063],[3.3017,-29.80063]],[[493.65076,173.74515],[-28.54922,-18.49541],[28.54922,18.49541]],[[550.60688,262.40743],[-18.91202,-28.11106],[18.91202,28.11106]],[[608.26824,331.27713],[-10.42017,-26.59232],[10.42017,26.59232]],[[581.63596,413.43788],[29.5636,-16.5501],[-29.5636,16.5501]],[[489.83504,395.17333],[10.59895,28.89652],[-10.59895,-28.89652]],[[514.97928,277.83947],[-5.30273,36.56243],[5.30273,-36.56243]],[[467.17824,217.31252],[33.26876,2.71457],[-33.26876,-2.71457]],[[366.41896,264.08378],[20.78802,-33.66503],[-20.78802,33.66503]],[[371.42595,384.71931],[-20.66856,-35.46123],[20.66856,35.46123]],[[462.11965,437.62161],[-33.81448,1.97211],[33.81448,-1.97211]],[[528.96498,390.4633],[-1.61257,21.82881],[1.61257,-21.82881]],[[454.88923,344.90073],[47.49517,3.43354],[-47.49517,-3.43354]],[[322.21835,377.89199],[18.37851,-22.99166],[-18.37851,22.99166]],[[358.58189,433.71775],[-24.70188,-0.28391],[24.70188,0.28391]],[[406.35977,380.17742],[-3.7124,21.84188],[3.7124,-21.84188]]],"closed":true,"strokeColor":[0,0,0],"strokeWidth":5}],[[["Point",452.37472,271.95975],["Point",498.30283,228.00243],["Point",523.24666,209.67566],["Point",586.10668,300.81536],["Point",501.39462,324.86085],["Point",422.07864,223.3116],["Point",513.22797,417.04625],["Point",492.48581,352.25192],["Point",359.28646,356.59666],["Point",393.06553,411.55003],["Point",407.33358,346.33317]],[true,false,true,false,true,true,true,false,false,true,false]]]'
-        globals.fromJSON(conway);
-
-        // We add a second layer to display intersections
-        var intersectionLayer = new Layer();
-
-				var intersections = activeKnot.getIntersections(activeKnot);
-
-				function showIntersections() {
-          intersectionLayer.removeChildren();
-					intersections = activeKnot.getCrossings(activeKnot);
-
-          // Let's map observed intersections to previous intersections
-          // First, the case when an intersection was added:
-          if (intersectionWatcher[0].length < intersections.length) {
-            var bools = Array(intersections.length).fill(false);
-
-            for (var i = 0; i < intersectionWatcher[0].length; i++) {
-              var previous = intersectionWatcher[0][i];
-
-              // we calculate the index in //intersections// of the point that is closest to //previous//.
-              var min = 99999999999999;
-              var min_index = 0;
-              for (var k = 0; k < intersections.length; k++) {
-                  var distance = intersections[k].point.getDistance(previous);
-                  if (distance < min) {
-                    min = distance;
-                    min_index = k;
-                  }
-              }
-              // We copy the over-under boolean from this minimal value
-              bools[min_index] = intersectionWatcher[1][i];
-            }
-
-            intersectionWatcher[1] = bools;
-          }
-
-          // Next, the case when intersections were deleted:
-          else if (intersectionWatcher[0].length >= intersections.length) {
-            var bools = Array(intersectionWatcher[0].length).fill(false);
-
-            for (var i = 0; i < intersections.length; i++) {
-              var intersection = intersections[i].point;
-
-              // we calculate the index in //intersectionWatcher[0]// of the point that is closest to //intersection//.
-              var min = 99999999999999;
-              var min_index = 0;
-              for (var k = 0; k < intersectionWatcher[0].length; k++) {
-                  var distance = intersectionWatcher[0][k].getDistance(intersection);
-                  if (distance < min) {
-                    min = distance;
-                    min_index = k;
-                  }
-              }
-              // We copy the over-under boolean from this minimal value
-              bools[i] = intersectionWatcher[1][min_index];
-            }
-
-            intersectionWatcher[1] = bools;
-          }
-
-          for (var i = 0; i < intersections.length; i++) {
-            var intersect = intersections[i];
-            intersectionWatcher[0][i] = intersect.point;
-          }
-
-					for (var i = 0; i < intersections.length; i++) {
-              var intersect = intersections[i];
-
-              // This would need to be two variables for multiple knots.
-              var path = intersect.path;
-              var center = intersect.point;
-
-              var i1 = intersect.curve.index;
-              var i2 = intersect.intersection.curve.index;
-
-              intersect.curve.data = {};
-
-              var curve1 = intersect.curve;
-              var curve2 = intersect.intersection.curve;
-              var t1 = intersect.time;
-              var t2 = intersect.intersection.time;
-
-              var tangent1 = intersect.tangent;
-              var tangent2 = intersect.intersection.tangent;
-
-              if (intersectionWatcher[1][i]) {
-                t1 = intersect.intersection.time;
-                t2 = intersect.time;
-                tangent1 = intersect.intersection.tangent;
-                tangent2 = intersect.tangent;
-                curve1 = intersect.intersection.curve;
-                curve2 = intersect.curve;
-              }
-              var radius = (15 * Math.abs(tangent1.dot(tangent2)) + 2 * globals.strokeWidth) / curve1.length;
-              var segments = [curve1.getPart(t1 - radius, t1 + radius).segment1.clone(), curve1.getPart(t1 - radius, t1 + radius).segment2.clone()];
-
-              var path = new Path({
-                  segments: segments,
-                  strokeColor: 'white',
-                  strokeWidth: window.globals.gapWidth * window.globals.strokeWidth,
-                  data: {kind: 'intersection', i1: i, path: path}
-              });
-
-              var path2 = new Path({
-                  segments: segments,
-                  strokeColor: window.globals.showIntersections ? 'red' : window.globals.strokeColor,
-                  strokeWidth: window.globals.strokeWidth,
-                  locked: true
-              });
-					}
-				}
-
-        function alexanderPolynomial() {
-          showIntersections();
-          intersections = activeKnot.getCrossings(activeKnot);
-          if (intersections.length == 0) {
-            return '0';
-          }
-          underTimes = [];
-
-          for (var i = 0; i < intersections.length; i++) {
-              var intersect = intersections[i];
-              if (intersectionWatcher[1][i]) {
-                underTimes.push(intersect.time + intersect.index);
-              }
-              else {
-                underTimes.push(intersect.intersection.time + intersect.intersection.index);
-              }
-          }
-          underTimes.sort(function(a, b){return a-b});
-
-          function getStrand(time) {
-            if (time <= underTimes[0] || time > underTimes[underTimes.length - 1]) {
-              return 0;
-            }
-            for (var k = 1; k < underTimes.length; k++) {
-              if (time <= underTimes[k]) {
-                return k;
-              }
-            }
-          }
-
-          matrix = [];
-          for (var i = 0; i < intersections.length -1; i++) {
-            var intersect = intersections[i];
-            over = getStrand(intersect.time + intersect.index);
-            under1 = getStrand(intersect.intersection.time + intersect.intersection.index);
-
-            // Swap over and under depending on whether the crossing goes over or under
-            if (intersectionWatcher[1][i]) {
-              over = [under1, under1 = over][0];
-            }
-            under2 = (under1 + 1) % (intersections.length);
-
-            // The entries swap if the crossing is left or right handed
-            var inverted = intersect.tangent.cross(intersect.intersection.tangent) < 0;
-            if (intersectionWatcher[1][i]) under2 = [under1, under1 = under2][0];
-            if (inverted) {under2 = [under1, under1 = under2][0];}
-            row = Array(intersections.length).fill(0);
-            row[over] += polyToInt([1,-1]);
-            row[under1] += polyToInt([-1]);
-            row[under2] += polyToInt([0,1]);
-            matrix.push(row.slice(0,intersections.length - 1));
-          }
-          
-          var polynomial = intToPoly(det(matrix));
-          var out = [];
-          var flag = 0;
-          for (var k = 0; k < polynomial.length; k++) {
-            var coeff = polynomial[k];
-            if (flag == 0) {
-              if (coeff != 0) {
-                flag = coeff > 0 ? 1 : -1;
-                out.push(flag * coeff);
-              }
-            }
-
-            else {
-              out.push(flag * coeff);
-            }            
-          }
-          
-          return out;
-        }
-
-        function alexanderString() {
-          var p = alexanderPolynomial();
-          var out = "\\( p(t) = ";
-          var l = p.length;
-          for (var k = 0; k < l; k++) {
-            var coeff = p[k];
-            var exponent = (l - 1) / 2 - k;
-            console.log(exponent);
-            out += (coeff > 0 && k != 0 ? "+" : "");
-            out += coeff.toString();
-            out += exponent != 0 ? "t^{" + exponent.toString() + "}" : "";
-          }
-          out += "\\)";
-          console.log(out);
-          return out
-        }
-
-        var segment, path, handleIn, handleOut;
-        var movePath = false;
-        var drawn;
-        function onMouseDown(event) {
-            if (drawing) {
-              project.clear(); // This would be different for more than one knot
-
-              drawn = new Path({
-                  segments: [event.point],
-                  strokeColor: 'black',
-                  strokeWidth: window.globals.strokeWidth,
-                  fullySelected: true,
-                  data: {z: []}
-              });
-              intersectionLayer = new Layer();
-
-              return;
-            }
-
-
-            segment = handleIn = handleOut = null;
-            var hitResult = project.hitTest(event.point, hitOptions);
-
-            if (!hitResult) {
-                activeKnot.selected = !activeKnot.selected;
-                hitOptions.handles = false;
-                return;
-            }
-
-            if (event.modifiers.shift) {
-                if (hitResult.type == 'segment') {
-                    hitResult.segment.remove();
-                }
-
-                else if (hitResult.item.data.kind == 'intersection') {
-                };
-                return;
-            }
-
-            if (hitResult) {
-                if (hitResult.item.data.kind == 'intersection') {
-                  activeKnot = hitResult.item.data.path;
-                  var i = hitResult.item.data.i1;
-                  intersectionWatcher[1][i] = !(intersectionWatcher[1][i]);
-                }
-                else if (hitResult.type == 'segment') {
-                    activeKnot = hitResult.item;
-                    segment = hitResult.segment;
-
-                    activeKnot.selected = true;
-                } else if (hitResult.type == 'stroke') {
-                    activeKnot = hitResult.item;
-                    var location = hitResult.location;
-                    console.log(location.time);
-                    activeKnot.selected = true;
-                    segment = activeKnot.insert(location.index + 1, event.point);
-                }
-                else if (hitResult.type == 'handle-in') {
-                  handleIn = hitResult.segment;
-                }
-                else if (hitResult.type == 'handle-out') {
-                  handleOut = hitResult.segment;
-                }
-              }
-
-						showIntersections();
-        }
-
-        function onMouseMove(event) {
-            if (!drawing) {
-              showIntersections();
-            }
-        }
-        function onMouseUp(event) {
-          if (drawing) {
-            if (globals.smooth) {drawn.simplify();}
-            drawn.simplify(15);
-          	drawn.fullySelected = true;
-
-            drawn.closed = true;
-            drawing = false;
-
-            activeKnot = drawn.clone();
-            drawn.remove();
-          }
-
-          else if (globals.smooth) activeKnot.smooth('geometric', 1);
-          polynomial.innerHTML = alexanderString();
-          MathJax.typeset();
-        }
-        function onMouseDrag(event) {
-            if (drawing) {
-              drawn.add(event.point);
-              return;
-            }
-            if (segment) {
-
-              segment.point += event.delta;
-
-              var next = segment;
-              var previous = segment;
-              var delta = event.delta;
-              for (var i=0; i < window.globals.neighbors; i++) {
-                next = next.next;
-
-                delta *= 0.5;
-                previous = previous.previous;
-                next.point += delta;
-                previous.point += delta;
-              }
-
-              }
-
-            else if (handleIn) {
-              handleIn.handleIn += event.delta; // This doesn't work sometimes, for some reason
-            }
-            else if (handleOut) {handleOut.handleOut += event.delta;}
-            showIntersections();
-
-            polynomial.innerHTML = alexanderString();
-            MathJax.typeset();
-        }
-        polynomial.innerHTML = alexanderString();
-        MathJax.typeset();
-        
-        var speed = 10;
-        var angularSpeed = 3;
-        function onKeyDown(event) {
-          var delta = new Point(0,0);
-        	if(event.key == 'a') {
-        		delta.x -= speed;
-        	}
-        	else if(event.key == 'd') {
-        		delta.x += speed;
-        	}
-        	if(event.key == 'w') {
-        		delta.y -= speed;
-        	}
-        	else if(event.key == 's') {
-        		delta.y += speed;
-        	}
-        	activeKnot.translate(delta);
-
-          if(event.key == 'e') {
-        		activeKnot.rotate(angularSpeed);
-        	}
-          else if(event.key == 'q') {
-        		activeKnot.rotate(-angularSpeed);
-        	}
-
-          showIntersections();
-        }
-
-        </script>
+    <script type="text/javascript" src="js/polynomials.js"></script>
+    <script type="text/paperscript" canvas="canvas" src="js/canvas.js"></script>
 </head>
+
 <body>
     <div style="text-align:center;">
-      
-      <canvas id="canvas" width="1000px;" height="500px;" ></canvas>
+
+      <canvas id="canvas" width="1000px;" height="450px;"></canvas>
       <div style="margin:5%;">
         <p><b>Alexander Polynomial: <span id="alexanderPolynomial"></span></b></p>
-        
-        <button type="button" onclick="toSVG()">Export to SVG</button>
-        <button type="button" onclick="toJSON()">Export to JSON</button>
-        <button type="button" onclick="window.globals.select()">Select / Unselect everything</button>
-        <button type="button" onclick="window.globals.draw();">Reset & Enter free Drawing!</button>
-        <p>Drag k neighbors: <input type="range" min="0" max="3" value="0" class="slider"  onchange="window.globals.neighbors = this.value;"></p>
-        <p>Gap Width: <input type="range" min="2" max="5" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"></p>
-        <p>Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"></p>
-        <p>Show Intersections: <input type="checkbox" checked="true" onchange="window.globals.showIntersections = this.checked;"></p>
-        <p>Force Smoothness (Potentially Destructive): <input type="checkbox" checked="true" onchange="window.globals.smooth = this.checked;"></p>
-        <button type="button" onclick="window.globals.straighten()">Straighten! (Potentially Destructive)</button>
+        <hr>
+        <p>
+          <button type="button" onclick="window.globals.draw(); smoothing.checked = false;"><b>Draw from Scratch</b></button>
+          <button type="button" onclick="window.globals.select()">Select / Unselect Bezier Handles</button>
+          <button type="button" onclick="window.globals.undo()">Undo</button>
+        </p>
 
+        <p>Force Smoothness: <input id="smoothing" type="checkbox" checked="true" onchange="window.globals.smooth = this.checked;">
+        | <button type="button" onclick="straighten()">Straighten</button>
+
+      </p>
+
+        <p>Drag Neighboring Points: <input type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"></p>
+
+
+        <p><b>Styling:</b><br>
+          Gap Width: <input type="range" min="2" max="5" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
+          Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
+          Show Intersections: <input type="checkbox" checked="true" onchange="window.globals.showIntersections = this.checked;">
+        </p>
+        <hr>
+
+        <p><b>Exporting:</b>
+          <button type="button" onclick="toSVG()">Export to SVG</button>
+          <button type="button" onclick="toJSON()">Export to JSON</button>
+          <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!)'">Export to TikZ</button>
+        </p>
       </div>
     </div>
 
@@ -527,12 +58,15 @@
           <li>Clicking on segments to add new nodes</li>
           <li>Clicking and dragging nodes to move them (drag k neighbors is useful to rescue nodes from below crossings)</li>
           <li>and finally clicking on the automatically detected crossings to switch them. (sadly a little volatile at the moment)</li>
+          <li>or importing JSON</li>
           <li><b>or clicking on 'Drawing' to draw a new knot from scratch</b>!</li>
         </ul>
         <li>Adjust the knot by:</li>
         <ul>
           <li>Removing nodes with <b>Shift+Click</b></li>
+          <li>Smoothing segments with <b>Control+Click</b></li>
           <li>Moving and rotating the knot with the <b>WASD+EQ</b> keys</li>
+          <li>Undoing with the <b>Z</b> key</li>
           <li>Selecting it through the select button and adjust Bezier handles</li>
           <li>Forcing smoothness (twice continuous differentiability, to be precise)</li>
           <li>Adjusting the style with the sliders</li>
@@ -540,25 +74,33 @@
         <li> Show the knot to your friends by:
           <ul>
             <li>Exporting it to SVG!</li>
+            <li>Exporting it to JSON, to be imported back into Knottingham!</li>
+            <li>Exporting it to TikZ! (Fully customisable, but without crossing Info)</li>
           </ul>
         </li>
       </ul>
 
       These features are planned:
       <ul>
-        <li>Loading JSON</li>
-        <li>Classification of knots through knot invariants (for single knots)</li>
-        <li>Exporting to TikZ</li>
         <li>Non-Reidemeister Move-Detection</li>
         <li>Some more styling options</li>
-        <li>Undoing</li>
-        <li>Multiple intertwined knots</li>
       </ul>
-      <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a> </p>
+      <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
     </div>
      <script type="text/javascript">
       window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:true};
       var polynomial = document.getElementById('alexanderPolynomial');
+      var smoothing = document.getElementById('smoothing');
+
+      function straighten() {
+        smoothing.checked = false;
+        window.globals.straighten();
+      }
+
+      function toTikz() {
+        var string =  window.globals.toTikz();
+        navigator.clipboard.writeText(string);
+      }
 
       function toSVG() {
         // Kindly provided by users senz, Dave and defghi 1977
