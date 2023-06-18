@@ -2,8 +2,10 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>🪢 Knottingham 🪢</title>
+    <title> Knottingham 🪢</title>
+    <link rel="icon" href="https://fi-le.net/images/favicon.png">
     <meta author content="fi-le">
+    <meta name="keywords" content="Knot Theory, Knottingham, Knots">
     <script type="text/javascript" src="lib/paper.js"></script>
     <script type="text/javascript" src="lib/BigInteger.min.js"></script>
     <script type="text/javascript" src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -18,7 +20,14 @@
 
       <canvas id="canvas" width="1000px;" height="450px;"></canvas>
       <div style="margin:5%;">
-        <p><b>Alexander Polynomial: <span id="alexanderPolynomial"></span>   |   Candidates with  \(<10\) Crossings: <span id="candidates"></span> </p>
+        <div style="display: grid;grid-template-columns: 1.5fr 1fr;align-items: center;">
+          <p><b>Alexander Polynomial:</b> <span id="alexanderPolynomial"></span></p>
+          <div style="display: flex;align-items: center;">
+            <p><b>Candidates with  \(<10\) Crossings:</b>  </p><span id="candidates"></span>
+          </div>
+
+        </div>
+
         <hr>
         <p>
           <button type="button" onclick="window.globals.draw(); smoothing.checked = false;"><b>Draw from Scratch</b></button>
@@ -31,9 +40,9 @@
 
       </p>
 
-        <p>Drag Neighboring Points: <input type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"></p>
+        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="color:grey;">Try reverting Non-Reidemeister moves (experimental):</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked;"></p>
 
-        
+
         <p><b>Styling:</b><br>
           Gap Width: <input type="range" min="2" max="5" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
           Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
@@ -59,7 +68,7 @@
         <ul>
           <li>Clicking on segments to add new nodes</li>
           <li>Clicking and dragging nodes to move them (you can use 'Drag Neighbors' to rescue nodes from below crossings)</li>
-          <li>and finally clicking on the automatically detected crossings to switch them.</li>
+          <li>and finally <b>clicking on the (red) crossings to switch them.</b></li>
           <li>or importing JSON</li>
           <li><b>or clicking on 'Drawing' to draw a new knot from scratch</b>!</li>
         </ul>
@@ -67,7 +76,7 @@
         <ul>
           <li>Removing nodes with <b>Shift+Click</b></li>
           <li>Smoothing segments with <b>Control+Click</b></li>
-          <li>Moving and rotating the knot with the <b>WASD+EQ</b> keys</li>
+          <li>Moving, rotating and mirroring the knot with the <b>WASD+EQ+M</b> keys</li>
           <li>Undoing with the <b>Z</b> key</li>
           <li>Selecting it through the select button and adjust Bezier handles</li>
           <li>Forcing smoothness (twice continuous differentiability, to be precise)</li>
@@ -90,11 +99,13 @@
       <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
     </div>
      <script type="text/javascript">
-      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:true};
+      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:true, isomorphy:false};
       var polynomial = document.getElementById('alexanderPolynomial');
       var candidates = document.getElementById('candidates');
       var smoothing = document.getElementById('smoothing');
-
+      var dragging = document.getElementById('dragging');
+      var isomorphy = document.getElementById('isomorphy');
+      smoothing.checked = true; isomorphy.checked = false; dragging.checked = false;
       function straighten() {
         smoothing.checked = false;
         window.globals.straighten();
