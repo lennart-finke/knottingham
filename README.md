@@ -1,4 +1,6 @@
 ## Knottingham
+<img src="https://fi-le.net/images/knottingham.gif">
+
 is a tool that lets you draw and manipulate knot diagrams, sporting a clean yet somewhat hand-made look. 
 You can:
 1. Draw a knot from scratch & Have its intersections calculated for you
