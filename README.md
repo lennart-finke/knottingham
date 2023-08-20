@@ -11,7 +11,7 @@ other features include:
 - Computing the Alexander Polynomial
 - Undoing
 - Styling
-- Incomplete Non-Reidemeister Move detection
+- Non-Reidemeister Move detection
 
 
 <img src="https://fi-le.net/images/knot.svg">
@@ -26,8 +26,8 @@ It uses [paper.js](https://github.com/paperjs/paper.js) for rendering. Other tha
  **In the Future**
  ---
 These features are planned:
-
-*   Complete Non-Reidemeister Move-Detection
+*   Redo
+*   Proven Non-Reidemeister Move-Detection
 *   Some more styling options
 
  **License**
