@@ -173,6 +173,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 								Math.abs(a-b-activeKnot.segments.length));
 			}
 
+			var flip = false;
 			for (var k = 0; k < intersectionWatcher[0].length; k++) {
 				var distance = metric(intersectionWatcher[2][k], intersectionTime) +  metric(intersectionWatcher[3][k], intersectionTime2) //
 				if (distance < min) {
@@ -182,25 +183,22 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 					min_index = k;
 				}
 			}
+			// In case the intersection loops around the other side. 
+			// Might be efficient to add a check whether this loop can be omitted.
+			for (var k = 0; k < intersectionWatcher[0].length; k++) {
+				var distance = metric(intersectionWatcher[3][k], intersectionTime) +  metric(intersectionWatcher[2][k], intersectionTime2) //
+				if (distance < min) {
+					second = min;
+					second_index = min_index;
+					min = distance;
+					min_index = k;
+					flip = true;
+					console.log("Intersection loops around.");
+				}
+			}
 			// We copy the over-under boolean from this minimal value
 			bools[i] = intersectionWatcher[1][min_index];
-			
-			// If an intersection loops from one end of the curve to the other, we do
-			// the same search, but with upper and lower crossings reversed.
-			// We detect this case through time jumps to save us a loop.
-			if (Math.abs(intersectionTime - intersectionWatcher[2][min_index]) + Math.abs(intersectionTime2 - intersectionWatcher[3][min_index]) > 0.5) {
-				console.log("Intersection loops around.")
-				for (var k = 0; k < intersectionWatcher[0].length; k++) {
-					var distance = metric(intersectionWatcher[3][k], intersectionTime) +  metric(intersectionWatcher[2][k], intersectionTime2) //
-					if (distance < min) {
-						second = min;
-						second_index = min_index;
-						min = distance;
-						min_index = k;
-					}
-				}
-				bools[i] = !intersectionWatcher[1][min_index];
-			}
+			if (flip) {bools[i] = !bools[i]}
 
 			used_indices[min_index] = true;
 		}
