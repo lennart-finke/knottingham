@@ -30,7 +30,7 @@
 
         <hr>
         <p>
-          <button type="button" onclick="window.globals.draw(); smoothing.checked = false;"><b>Draw from Scratch</b></button>
+          <button type="button" onclick="window.globals.draw(); isomorphy.checked = false; smoothing.checked = false; window.globals.switchIsomorphy();window.globals.isomorphy = false;"><b>Draw from Scratch</b></button>
           <button type="button" onclick="window.globals.select()">Select / Unselect Bezier Handles</button>
           <button type="button" onclick="window.globals.undo()">Undo</button>
         </p>
@@ -40,7 +40,7 @@
 
       </p>
 
-        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="color:grey;">Try reverting Non-Reidemeister moves (experimental):</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked;"></p>
+        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
 
 
         <p><b>Styling:</b><br>
@@ -91,15 +91,18 @@
         </li>
       </ul>
 
-      These features are planned:
+      Knottingham can also try <b>detecting non-Reidemeister moves</b>! Check the corresponding box and start thinking through knot equivalences. Discontious operations like smoothing or deleting segments might lead to breaking the equivalence.
+      <br>
+      These features could arrive in a future version:
       <ul>
-        <li>Complete Non-Reidemeister Move-Detection</li>
+        <li>Proven Non-Reidemeister Move-Detection</li>
         <li>Some more styling options</li>
+        <li>Redoing</li>
       </ul>
       <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
     </div>
      <script type="text/javascript">
-      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:true, isomorphy:false};
+      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, smooth:false, isomorphy:false};
       var polynomial = document.getElementById('alexanderPolynomial');
       var candidates = document.getElementById('candidates');
       var smoothing = document.getElementById('smoothing');
