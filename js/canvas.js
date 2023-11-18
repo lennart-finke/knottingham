@@ -125,6 +125,16 @@ function popUndo() {if (undoStack.length > 0) {globals.fromJSON(undoStack.pop())
 pushUndo();
 
 function showIntersections() { // This detects and draws crossings. Runs every frame.
+	// First, some utility functions.
+	function getTime(seg) {return seg.time + seg.index;}
+
+	// The canonical metric on [0,1] where 0 is connected to 1.
+	function metric(a,b) {
+		return Math.min(Math.abs(a-b),
+						Math.abs(a-b+activeKnot.segments.length),
+						Math.abs(a-b-activeKnot.segments.length));
+	}
+
 	intersectionLayer.removeChildren();
 	intersections = activeKnot.getCrossings(activeKnot);
 
@@ -132,6 +142,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 	// First, the case when an intersection was added:
 	if (intersectionWatcher[0].length < intersections.length) {
 		var bools = Array(intersections.length).fill(false);
+		var used_indices = Array(intersections.length).fill(false);
 		for (var i = 0; i < intersectionWatcher[0].length; i++) {
 			var previous = intersectionWatcher[0][i];
 
@@ -148,33 +159,35 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 			}
 			// We copy the over-under boolean from this minimal value
 			bools[min_index] = intersectionWatcher[1][i];
+			used_indices[min_index] = true;
 		}
 
+		var counter = 0;
+		for (var i = 0; i < used_indices.length; i++) {
+			if (!used_indices[i]) {
+				counter += 1;
+				bools[i] = metric(getTime(intersections[i]), segment.index) >  metric(getTime(intersections[i].intersection), segment.index)
+			}
+		}
+		if (counter > 3) {console.log("Something unexpected happened"); illegal = true;};
 		intersectionWatcher[1] = bools;
 	}
 
 	// Next, the case when the number of intersections is less then or equal the previous (i.e. possibly vanished):
 	else if (intersectionWatcher[0].length >= intersections.length) {
-		var bools = Array(intersectionWatcher[0].length).fill(false); // The soon-to-be booleans of the next frame, to be found out.
+		var bools = Array(intersections.length).fill(false); // The soon-to-be booleans of the next frame, to be found out.
 		var used_indices = Array(intersectionWatcher[0].length).fill(false);
 
 		for (var i = 0; i < intersections.length; i++) {
 			var intersection = intersections[i].point;
-			var intersectionTime = intersections[i].time + intersections[i].index;
-			var intersectionTime2 = intersections[i].intersection.time + intersections[i].intersection.index;
+			var intersectionTime = getTime(intersections[i]);
+			var intersectionTime2 = getTime(intersections[i].intersection);
 
 			// We calculate the index in //intersectionWatcher[0]// of the point that is closest to //intersection//.
 			var min = 99999999999999;
 			var second = 99999999999998;
 			var min_index = 0;
 			var second_index = -1;
-
-			// The canonical metric on [0,1] where 0 is connected to 1.
-			function metric(a,b) {
-				return Math.min(Math.abs(a-b),
-								Math.abs(a-b+activeKnot.segments.length),
-								Math.abs(a-b-activeKnot.segments.length));
-			}
 
 			var flip = false;
 			for (var k = 0; k < intersectionWatcher[0].length; k++) {
@@ -219,7 +232,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 				// array.length == 1 is a Reidemeister 1 and nothing can break
 	
 				if (array.length == 2) { // This should be a Reidemeister 2
-					if (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]]) {
+					if (selectedEnd ^ (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]])) {
 						popUndo();
 						illegal = true;
 						console.log("Illegal Reidemeister 2.");
@@ -228,7 +241,6 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 					console.log("Something unexpected happened.");
 					illegal = true;
 					popUndo();
-					pushUndo();
 				}
 			}
 		}
@@ -469,6 +481,7 @@ var segment, path, handle, handleIn;
 var movePath = false;
 var discreteMove = false; // This variable records discreet actions to alert when isotopy is not guaranteed.
 var drawn;
+var selectedEnd = false;
 function onMouseDown(event) {
 		if (drawing) {
 			project.clear(); // This would be different for more than one knot
@@ -525,6 +538,7 @@ function onMouseDown(event) {
 				}
 		}
 
+		selectedEnd = false;
 		if (hitResult) {
 			if (hitResult.item.data.kind == 'intersection') {
 				activeKnot = hitResult.item.data.path;
@@ -534,6 +548,7 @@ function onMouseDown(event) {
 					activeKnot = hitResult.item;
 					segment = hitResult.segment;
 					activeKnot.selected = true;
+					selectedEnd = segment.index == 0;
 			} else if (hitResult.type == 'stroke') {
 					activeKnot = hitResult.item;
 					var index = hitResult.location._segment1.index;
