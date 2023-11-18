@@ -17,7 +17,9 @@ globals.updateStyle = function() {
 	activeKnot.strokeColor = globals.strokeColor;
 }
 globals.undo = function(){popUndo();}
-globals.straighten = function(){activeKnot.clearHandles();showIntersections();globals.smooth = false;}
+globals.straighten = function(){activeKnot.clearHandles();showIntersections();globals.smooth = false;discreteMove=true;}
+globals.flatten = function(){activeKnot.flatten(0.3);showIntersections();globals.smooth = false;}
+globals.simplify = function(){activeKnot.simplify(0.3);showIntersections();globals.smooth = false;}
 globals.toSVG = function(){return project.exportSVG({bounds:'content'});}
 globals.toJSON = function() { // Does not work for multiple knots
 	var obj = activeKnot.exportJSON({asString:false});
@@ -87,6 +89,7 @@ var hitOptions = {
 var intersectionWatcher = [[],[],[],[]];
 function resetIntersections(){intersectionWatcher = [[],[],[],[]]}
 var previousPolynomial = [1]; // A watcher for the alexanderPolynomial
+var previousGaussCode = [-1,2,-3,4,-5,6,-1,2,-7,-8,-3,4,-5,-9,10,6,7,-11,8,-9,10,11];
 var reidemeister3s = []; // We keep track of location and dominant direction in places with soon-to-be Reidemeister 3 moves.
 
 // Some constants 
@@ -312,7 +315,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 			tangent2 = intersect.tangent;
 			curve1 = intersect.intersection.curve;
 		}
-		var radius = (15 * Math.abs(tangent1.dot(tangent2)) + 2 * globals.strokeWidth) / curve1.length;
+		var radius = (1.5*Math.max(1.5*Math.tan(1.571*Math.abs(tangent1.dot(tangent2))), 2 * globals.strokeWidth))/ curve1.length;
 		var segments1 = [curve1.getPart(t1 - radius, t1 + radius).segment1.clone(), curve1.getPart(t1 - radius, t1 + radius).segment2.clone()];
 		var segments2 = [curve1.getPart(t1 - radius*1.01, t1 + radius*1.01).segment1.clone(), curve1.getPart(t1 - radius*1.01, t1 + radius*1.01).segment2.clone()];
 
@@ -403,6 +406,7 @@ function alexanderPolynomial() { // Calculates the Alexander Polynomial of the s
 	return out;
 }
 
+
 // From https://github.com/joshuahhh/knot-identification-tool/blob/master/kit.coffee
 // under MIT
 // Courtesy of Alexander Stoimenow and Joshua Horowitz
@@ -413,6 +417,7 @@ function alexanderString(p) { // Returns a MathJax string displaying the Alexand
 	var l = p.length;
 	for (var k = 0; k < l; k++) {
 		var coeff = p[k];
+		if (coeff == 0) {continue;}
 		var exponent = (l - 1) / 2 - k;
 		out += (coeff > 0 && k != 0 ? "+" : "");
 		out += coeff.toString();
@@ -423,35 +428,46 @@ function alexanderString(p) { // Returns a MathJax string displaying the Alexand
 }
 
 function typesetInvariants() { // Prints the Alexander polynomial and detects when it was changed.
+	log.innerHTML = "";
+	gC = gaussCode(intersectionWatcher);
+	if (gC == previousGaussCode) {return;}
+	if (globals.isomorphy && discreteMove) {
+		log.innerHTML = "Isotopy could not be guaranteed."; discreteMove = false;
+	}
+
+	gauss.innerHTML = gaussCode(intersectionWatcher);
+	dt.innerHTML = dowkerThistlethwaiteCode(intersectionWatcher).toString();
+	
 	var p = alexanderPolynomial();
 	polynomial.innerHTML = alexanderString(p);
 	if (globals.isomorphy) {
 			if (previousPolynomial == null) {
-			}
-			else if (polyToInt(p).value != polyToInt(previousPolynomial)) {
+			} else if (polyToInt(p).value != polyToInt(previousPolynomial)) {
 				popUndo();
+			} else {
+				pushUndo();
 			}
 	}
 	previousPolynomial = p;
 	candidates.innerHTML = "";
+	candidates_p.style.visibility = "hidden";
 	var entry = knotEncyclopedia[p]
 	if (entry !== undefined) {
 		var candidateArray = entry[0];
-		if (candidateArray.length > 0) {
-			for (var k = 0; k < candidateArray.length; k++) {
-				var knot = candidateArray[k];
-				candidates.innerHTML += "<a target='_blank' rel='noreferrer noopener' href='http://katlas.org/wiki/" + knot + "'> <img height='50px' src='https://fi-le.net/knottingham/images/" + knot + ".gif'> </a>";
-			}
+		for (var k = 0; k < candidateArray.length; k++) {
+			var knot = candidateArray[k];
+			candidates_p.style.visibility = "visible";
+			candidates.innerHTML += "<a target='_blank' rel='noreferrer noopener' href='http://katlas.org/wiki/" + knot + "'> <img height='50px' src='https://fi-le.net/knottingham/images/" + knot + ".gif'> </a>";
 		}
 	}
 	
 	MathJax.typeset();
 }
 
-
 // Now, the user interaction:
-var segment, path, handleIn, handleOut;
+var segment, path, handle, handleIn;
 var movePath = false;
+var discreteMove = false; // This variable records discreet actions to alert when isotopy is not guaranteed.
 var drawn;
 function onMouseDown(event) {
 		if (drawing) {
@@ -471,7 +487,7 @@ function onMouseDown(event) {
 
 		pushUndo();
 
-		segment = handleIn = handleOut = null;
+		segment = handleIn = handle = null;
 		var hitResult = project.hitTest(event.point, hitOptions);
 
 		if (!hitResult) { // A click onto the blank canvas, we (de)select the active knot
@@ -482,6 +498,7 @@ function onMouseDown(event) {
 
 		if (event.modifiers.shift) { // Shift+Click removes a segment
 				if (hitResult.type == 'segment') {
+					discreteMove = true;
 					var s = hitResult.segment;
 					var index = s.index;
 					
@@ -501,6 +518,7 @@ function onMouseDown(event) {
 
 		if (event.modifiers.control) { // Control+Click smooths a segment
 				if (hitResult.type == 'segment') {
+						discreteMove = true;
 						var seg = hitResult.segment;
 						seg.handleIn = (seg.previous.point - seg.next.point) / 4;
 						seg.handleOut = -seg.handleIn;
@@ -530,9 +548,12 @@ function onMouseDown(event) {
 						}
 					}
 			} else if (hitResult.type == 'handle-in') {
-				handleIn = hitResult.segment;
-			} else if (hitResult.type == 'handle-out') {
-				handleOut = hitResult.segment;
+				handle = hitResult.segment; 
+				handleIn = true;
+			}
+			else if (hitResult.type == 'handle-out') {
+				handle = hitResult.segment; 
+				handleIn = false;
 			}
 		}
 
@@ -540,9 +561,9 @@ function onMouseDown(event) {
 }
 
 function onMouseMove(event) {
-		if (!drawing) {
-			showIntersections();
-		}
+	if (!drawing) {
+		showIntersections();
+	}
 }
 
 function onMouseUp(event) {
@@ -557,42 +578,50 @@ function onMouseUp(event) {
 		activeKnot = drawn.clone();
 		drawn.remove();
 		pushUndo();
-	}
-
-	else {
-		if (globals.smooth) activeKnot.smooth('geometric', 1);
+	} else {
+		if (globals.smooth) activeKnot.smooth({type: 'catmull-rom', factor: 0.5});
 		typesetInvariants();
 	}
 }
 
+var time = 0;
 function onMouseDrag(event) {
-		if (drawing) { // We are currently drawing.
-			drawn.add(event.point);
-			return;
+	var t = performance.now();
+	diff = t - time;
+	time = t;
+	console.log(1000 / diff);
+	if (drawing) { // We are currently drawing.
+		drawn.add(event.point);
+		return;
+	}
+	if (segment) {
+		segment.point += event.delta;
+
+		var next = segment;
+		var previous = segment;
+		var delta = event.delta;
+		for (var i=0; i < window.globals.neighbors; i++) {
+			next = next.next;
+
+			delta *= 0.5;
+			previous = previous.previous;
+			next.point += delta;
+			previous.point += delta;
 		}
-		if (segment) {
-			segment.point += event.delta;
+	}
 
-			var next = segment;
-			var previous = segment;
-			var delta = event.delta;
-			for (var i=0; i < window.globals.neighbors; i++) {
-				next = next.next;
-
-				delta *= 0.5;
-				previous = previous.previous;
-				next.point += delta;
-				previous.point += delta;
-			}
+	else if (handle) {
+		if (handleIn) {
+			handle.handleIn += event.delta;
+			if (!globals.independentHandles) {handle.handleOut -= event.delta;}
+		} else {
+			handle.handleOut += event.delta;
+			if (!globals.independentHandles) {handle.handleIn -= event.delta;}
 		}
-
-		else if (handleIn) {
-			handleIn.handleIn += event.delta; // This doesn't work sometimes, for some reason.
-		}
-		else if (handleOut) {handleOut.handleOut += event.delta;}
-		showIntersections();
-
-		typesetInvariants();
+	}
+	
+	showIntersections();
+	typesetInvariants();
 }
 typesetInvariants()
 
