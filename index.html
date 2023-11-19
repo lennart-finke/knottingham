@@ -19,43 +19,42 @@
 
 <body>
     <div style="text-align:center;">
-      
       <div style="margin:0px; padding:0px;">
         <canvas id="canvas" width="1000px;" height="450px;"></canvas>
         <p style="font-family: monospace;" id="log">log</p>
       </div>
-      
+
       <div style="margin:1%;">
         <div style="display: grid;grid-template-columns: 1.5fr 1fr;align-items: center;">
           <p><b>Alexander Polynomial:</b> <span id="alexanderPolynomial"></span></p>
           <p><b>Gauss</b>: <span id="gauss" style="font-family: monospace;"></span> <br> <b>Dowker-Thislethwaite</b>: <span id="dt" style="font-family: monospace;"></span></p>
             <p id="candidates-p"><b><!--Candidates with  \(<10\) Crossings:--></b>  <span id="candidates"></span></p>
-          
+
 
         </div>
 
         <hr>
         <p>
           <button type="button" onclick="window.globals.draw(); isomorphy.checked = false; smoothing.checked = false; window.globals.switchIsomorphy();window.globals.isomorphy = false;"><b>Draw from Scratch</b></button>
-          <button type="button" onclick="window.globals.select()">Select / Unselect Bezier Handles</button>
+          <button type="button" onclick="window.globals.select()">Show / Hide Bezier Handles</button>
           <button type="button" onclick="window.globals.undo()">Undo</button>
         </p>
 
         <p>Force Smoothness: <input id="smoothing" type="checkbox" checked="true" onchange="window.globals.smooth = this.checked;">
         | <button type="button" onclick="straighten()">Straighten</button>
-          <button type="button" onclick="flatten()">Flatten</button>
-          <button type="button" onclick="window.globals.simplify()">Simplify</button>
+          <!-- <button type="button" onclick="flatten()">Flatten</button>
+          <button type="button" onclick="window.globals.simplify()">Simplify</button> -->
       </p>
 
         <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
 
 
         <p><b>Styling:</b><br>
-          Gap Width: <input type="range" min="2" max="5" value="2" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
-          Stroke Width: <input type="range" min="1" max="10" value="3" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
-          Show Intersections: <input type="checkbox" checked="true" onchange="window.globals.showIntersections = this.checked;">
-          Drag Handles Independently: <input type="checkbox" checked="false" onchange="window.globals.independentHandles = this.checked;">
-        
+          Gap Width: <input type="range" min="2" max="5" value="2" step="0.1" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
+          Stroke Width: <input type="range" min="1" max="10" value="3"  step="0.1" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
+          Show Intersections: <input type="checkbox" id="showIntersections" onchange="window.globals.showIntersections = this.checked;">
+          Drag Handles Independently: <input type="checkbox" id="dragIndependently" onchange="window.globals.independentHandles = this.checked;">
+
         </p>
         <hr>
 
@@ -102,12 +101,14 @@
 
       Knottingham can also try <b>detecting non-Reidemeister moves</b>! Check the corresponding box and start thinking through knot equivalences. Discontious operations like smoothing or deleting segments might lead to breaking the equivalence.
       <br>
+      <!--
       These features could arrive in a future version:
       <ul>
         <li>Proven Non-Reidemeister Move-Detection</li>
         <li>Some more styling options</li>
         <li>Redoing</li>
       </ul>
+      -->
       <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
     </div>
      <script type="text/javascript">
@@ -118,11 +119,15 @@
       var smoothing = document.getElementById('smoothing');
       var dragging = document.getElementById('dragging');
       var isomorphy = document.getElementById('isomorphy');
+      var showIntersections = document.getElementById('showIntersections');
+      var dragIndependently = document.getElementById('dragIndependently');
       var dt = document.getElementById('dt');
       var log = document.getElementById('log');
       var gauss = document.getElementById('gauss');
 
-      smoothing.checked = true; isomorphy.checked = false; dragging.checked = false;
+      smoothing.checked = showIntersections.checked = true;
+      isomorphy.checked = dragging.checked = dragIndependently.checked = false;
+
       function flatten() {
         smoothing.checked = false;
         window.globals.flatten();

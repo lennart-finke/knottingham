@@ -5,7 +5,7 @@ licence: MIT
 © 2023
 
 To be interoperable with Paper.js, this file uses only limited JavaScript functionality.
-For example, match statements, const, 
+For example, match statements, const,
 
 */
 
@@ -92,11 +92,10 @@ var previousPolynomial = [1]; // A watcher for the alexanderPolynomial
 var previousGaussCode = [-1,2,-3,4,-5,6,-1,2,-7,-8,-3,4,-5,-9,10,6,7,-11,8,-9,10,11];
 var reidemeister3s = []; // We keep track of location and dominant direction in places with soon-to-be Reidemeister 3 moves.
 
-// Some constants 
+// Some constants
 var REIDEMEISTER_DISTANCE_THRESHOLD = 25;
 var REIDEMEISTER_DOT_THRESHOLD = 0.97;
 var drawing = false;
-var intersectionRadius = 1;
 var strokeColor = 'black';
 
 
@@ -199,7 +198,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 					min_index = k;
 				}
 			}
-			// In case the intersection loops around the other side. 
+			// In case the intersection loops around the other side.
 			// Might be efficient to add a check whether this loop can be omitted.
 			for (var k = 0; k < intersectionWatcher[0].length; k++) {
 				var distance = metric(intersectionWatcher[3][k], intersectionTime) +  metric(intersectionWatcher[2][k], intersectionTime2) //
@@ -228,9 +227,9 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 						array.push(i);
 					}
 				}
-				
+
 				// array.length == 1 is a Reidemeister 1 and nothing can break
-	
+
 				if (array.length == 2) { // This should be a Reidemeister 2
 					if (selectedEnd ^ (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]])) {
 						popUndo();
@@ -243,9 +242,8 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 					popUndo();
 				}
 			}
-		}
 
-		if (globals.isomorphy) { // This block is for detecting illegal Reidemeister 3 moves.
+		  // This block is for detecting illegal Reidemeister 3 moves.
 			var closest_indices = Array(intersections.length).fill(false);
 			var second_indices = Array(intersections.length).fill(false);
 			var second_distances = Array(intersections.length).fill(false);
@@ -266,7 +264,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 						min_index = k;
 					}
 				}
-				
+
 				closest_indices[i] = min_index;
 				second_indices[i] = second_index;
 				second_distances[i] = second;
@@ -281,9 +279,9 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 					var vector1 = bools[i] ? intersection.tangent : intersection.intersection.tangent;
 					var vector2 = bools[closest_index] ? intersections[closest_index].tangent : intersections[closest_index].intersection.tangent;
 					var vector3 = bools[second_index] ? intersections[second_index].tangent : intersections[second_index].intersection.tangent;
-	
-					var max_coliniarity = Math.max(Math.abs(vector1.dot(vector2)), Math.abs(vector2.dot(vector3)), Math.abs(vector3.dot(vector1)));				
-	
+
+					var max_coliniarity = Math.max(Math.abs(vector1.dot(vector2)), Math.abs(vector2.dot(vector3)), Math.abs(vector3.dot(vector1)));
+
 					if (max_coliniarity < 0.9999-second*second*second*second) {
 						console.log("Illegal Reidemeister 3.");
 						illegal = true;
@@ -321,13 +319,16 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 		var tangent1 = intersect.tangent;
 		var tangent2 = intersect.intersection.tangent;
 
+		var curvature1 = intersect.curvature;
+		var curvature2 = intersect.intersection.curvature;
+
 		if (intersectionWatcher[1][i]) {
 			t1 = intersect.intersection.time;
 			tangent1 = intersect.intersection.tangent;
 			tangent2 = intersect.tangent;
 			curve1 = intersect.intersection.curve;
 		}
-		var radius = (1.5*Math.max(1.5*Math.tan(1.571*Math.abs(tangent1.dot(tangent2))), 2 * globals.strokeWidth))/ curve1.length;
+		var radius = (window.globals.gapWidth/2) * (Math.max(Math.max(250*(curvature1+curvature2),2.25)*Math.tan(1.571*Math.abs(tangent1.dot(tangent2))), 2 * globals.strokeWidth))/ curve1.length;
 		var segments1 = [curve1.getPart(t1 - radius, t1 + radius).segment1.clone(), curve1.getPart(t1 - radius, t1 + radius).segment2.clone()];
 		var segments2 = [curve1.getPart(t1 - radius*1.01, t1 + radius*1.01).segment1.clone(), curve1.getPart(t1 - radius*1.01, t1 + radius*1.01).segment2.clone()];
 
@@ -336,7 +337,7 @@ function showIntersections() { // This detects and draws crossings. Runs every f
 				strokeColor: 'white',
 				strokeWidth: window.globals.gapWidth * window.globals.strokeWidth,
 				data: {kind: 'intersection', i1: i, path: path},
-				locked: globals.isomorphy
+				locked: globals.isomorphy || !window.globals.showIntersections
 		});
 		var path2 = new Path({
 				segments: segments2,
@@ -449,7 +450,7 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 
 	gauss.innerHTML = gaussCode(intersectionWatcher);
 	dt.innerHTML = dowkerThistlethwaiteCode(intersectionWatcher).toString();
-	
+
 	var p = alexanderPolynomial();
 	polynomial.innerHTML = alexanderString(p);
 	if (globals.isomorphy) {
@@ -472,7 +473,7 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 			candidates.innerHTML += "<a target='_blank' rel='noreferrer noopener' href='http://katlas.org/wiki/" + knot + "'> <img height='50px' src='https://fi-le.net/knottingham/images/" + knot + ".gif'> </a>";
 		}
 	}
-	
+
 	MathJax.typeset();
 }
 
@@ -514,7 +515,7 @@ function onMouseDown(event) {
 					discreteMove = true;
 					var s = hitResult.segment;
 					var index = s.index;
-					
+
 					for (var i = 0; i < intersectionWatcher[2].length; i++) {
 						if (intersectionWatcher[2][i] >= index) {
 							intersectionWatcher[2][i] -= 1;
@@ -563,11 +564,13 @@ function onMouseDown(event) {
 						}
 					}
 			} else if (hitResult.type == 'handle-in') {
-				handle = hitResult.segment; 
+				segment = hitResult.segment;
+				handle = true;
 				handleIn = true;
 			}
 			else if (hitResult.type == 'handle-out') {
-				handle = hitResult.segment; 
+				segment = hitResult.segment;
+				handle = true;
 				handleIn = false;
 			}
 		}
@@ -609,7 +612,15 @@ function onMouseDrag(event) {
 		drawn.add(event.point);
 		return;
 	}
-	if (segment) {
+	if (handle) {
+		if (handleIn) {
+			segment.handleIn += event.delta;
+			if (!globals.independentHandles) {segment.handleOut -= event.delta;}
+		} else {
+			segment.handleOut += event.delta;
+			if (!globals.independentHandles) {segment.handleIn -= event.delta;}
+		}
+	} else if (segment) {
 		segment.point += event.delta;
 
 		var next = segment;
@@ -625,16 +636,8 @@ function onMouseDrag(event) {
 		}
 	}
 
-	else if (handle) {
-		if (handleIn) {
-			handle.handleIn += event.delta;
-			if (!globals.independentHandles) {handle.handleOut -= event.delta;}
-		} else {
-			handle.handleOut += event.delta;
-			if (!globals.independentHandles) {handle.handleIn -= event.delta;}
-		}
-	}
-	
+
+
 	showIntersections();
 	typesetInvariants();
 }
@@ -649,7 +652,7 @@ function onKeyDown(event) {
 	} else if (event.key == 'd') {
 		delta.x += speed;
 	}
-	
+
 	if (event.key == 'w') {
 		delta.y -= speed;
 	} else if(event.key == 's') {
