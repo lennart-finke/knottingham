@@ -42,8 +42,8 @@
 
         <p>Force Smoothness: <input id="smoothing" type="checkbox" checked="true" onchange="window.globals.smooth = this.checked;">
         | <button type="button" onclick="straighten()">Straighten</button>
-          <!-- <button type="button" onclick="flatten()">Flatten</button>
-          <button type="button" onclick="window.globals.simplify()">Simplify</button> -->
+          <!-- --> <button type="button" onclick="flatten()">Flatten</button>
+          <button type="button" onclick="window.globals.simplify()">Simplify</button> 
       </p>
 
         <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
