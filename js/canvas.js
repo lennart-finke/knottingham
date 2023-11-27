@@ -71,6 +71,7 @@ globals.toTikz = function(scale) {
 
 globals.switchIsomorphy = function() {
 	previousPolynomial = null;
+	pushUndo();
 }
 
 var hitOptions = {
@@ -88,7 +89,6 @@ var hitOptions = {
 // intersectionWatcher[2],[3] = time points of the intersections (t,s) where t < s
 var intersectionWatcher = [[],[],[],[]];
 function resetIntersections(){intersectionWatcher = [[],[],[],[]]}
-globals.switchIsomorphy();
 var previousGaussCode = [-1,2,-3,4,-5,6,-1,2,-7,-8,-3,4,-5,-9,10,6,7,-11,8,-9,10,11];
 var reidemeister3s = []; // We keep track of location and dominant direction in places with soon-to-be Reidemeister 3 moves.
 
@@ -123,6 +123,7 @@ var lastMousePosition = new Point(0,0);
 function pushUndo() {if (undoStack.length > 40) undoStack.shift(); undoStack.push(globals.toJSON());}
 function popUndo() {if (undoStack.length > 0) {globals.fromJSON(undoStack.pop());typesetInvariants();}}
 pushUndo();
+globals.switchIsomorphy();
 
 function showIntersections(kwargs) { // This detects and draws crossings. Runs every frame.
 	// First, some utility functions.
@@ -166,7 +167,9 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 		for (var i = 0; i < used_indices.length; i++) {
 			if (!used_indices[i]) {
 				counter += 1;
-				bools[i] = metric(getTime(intersections[i]), segment.index) >  metric(getTime(intersections[i].intersection), segment.index)
+				idx = 0;
+				if (segment) {idx = segment.index;}
+				bools[i] = metric(getTime(intersections[i]), idx) >  metric(getTime(intersections[i].intersection), idx)
 			}
 		}
 		if (counter > 3) {console.log("Something unexpected happened"); illegal = true;};
@@ -392,7 +395,7 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 			if (previousPolynomial == null) {
 			} else if (polyToInt(p).value != polyToInt(previousPolynomial)) {
 				popUndo();
-				log.innerHTML("Illegal move detected! Reverting...");
+				log.innerHTML = "Illegal move detected! Reverting...";
 			}
 	}
 	previousPolynomial = p;
@@ -446,24 +449,24 @@ function onMouseDown(event) {
 				return;
 		}
 
-		if (event.modifiers.shift) { // Shift+Click removes a segment
-				if (hitResult.type == 'segment') {
-					discreteMove = true;
-					var s = hitResult.segment;
-					var index = s.index;
+		if (event.modifiers.shift && !(hitResult.item.data.kind == 'intersection')) { // Shift+Click removes a segment
+			if (hitResult.type == 'segment') {
+				discreteMove = true;
+				var s = hitResult.segment;
+				var index = s.index;
 
-					for (var i = 0; i < intersectionWatcher[2].length; i++) {
-						if (intersectionWatcher[2][i] >= index) {
-							intersectionWatcher[2][i] -= 1;
-						}
-						if (intersectionWatcher[3][i] >= index) {
-							intersectionWatcher[3][i] -= 1;
-						}
+				for (var i = 0; i < intersectionWatcher[2].length; i++) {
+					if (intersectionWatcher[2][i] >= index) {
+						intersectionWatcher[2][i] -= 1;
 					}
-
-					s.remove();
+					if (intersectionWatcher[3][i] >= index) {
+						intersectionWatcher[3][i] -= 1;
+					}
 				}
-				return;
+
+				s.remove();
+			}
+			return;
 		}
 
 		if (event.modifiers.control) { // Control+Click smooths a segment
@@ -551,21 +554,24 @@ function onMouseDrag(event) {
 	}
 
 	MAX_CURSOR_SPEED = 5;
-	if (handle) {
-		var delta = event.point - handle.point;
-	} else {
+	if (handle && handleIn) {
+		var delta = event.point - segment.point - segment.handleIn;
+	} else if (handle && !handleIn) {
+		var delta = event.point - segment.point - segment.handleOut;
+	} else if (segment) {
 		var delta = event.point - segment.point;
-	} if (globals.isomorphy) {
+	} if (!delta) {return;}
+	if (globals.isomorphy) {
 		delta = delta / Math.max(1,delta.length/MAX_CURSOR_SPEED);
 	}
 	
 
 	if (handle) {
 		if (handleIn) {
-			segment.handleIn += event.delta;
+			segment.handleIn += delta;
 			if (!globals.independentHandles) {segment.handleOut -= delta;}
 		} else {
-			segment.handleOut += event.delta;
+			segment.handleOut += delta;
 			if (!globals.independentHandles) {segment.handleIn -= delta;}
 		}
 	} else if (segment) {
