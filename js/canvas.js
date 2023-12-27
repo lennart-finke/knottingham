@@ -18,7 +18,7 @@ globals.updateStyle = function() {
 }
 globals.undo = function(){popUndo();}
 globals.straighten = function(){activeKnot.clearHandles();showIntersections({});globals.smooth = false;discreteMove=true;}
-globals.flatten = function(){activeKnot.flatten(0.3);showIntersections({"spatial":true});globals.smooth = false;}
+globals.flatten = function(){activeKnot.flatten(1);showIntersections({"spatial":true});globals.smooth = false;}
 globals.simplify = function(){activeKnot.simplify(0.3);showIntersections({});globals.smooth = false;}
 globals.toSVG = function(){return project.exportSVG({bounds:'content'});}
 globals.toJSON = function() { // Does not work for multiple knots
@@ -35,6 +35,7 @@ globals.fromJSON = function(jsonString) { // Does not work for multiple knots
 		intersectionWatcher[1][k] = intersections[1][k];
 		intersectionWatcher[0][k] = new Point(intersections[0][k][1], intersections[0][k][2]);
 	}
+	activeKnot.closed = true;
 }
 globals.select = function(){
 	var bool = activeKnot.fullySelected;
@@ -73,6 +74,8 @@ globals.switchIsomorphy = function() {
 	previousPolynomial = null;
 	pushUndo();
 }
+
+globals.getNumIntersections = function(){return intersectionWatcher[0].length;}
 
 var hitOptions = {
 	segments: true,
@@ -324,9 +327,6 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 		var tangent1 = intersect.tangent;
 		var tangent2 = intersect.intersection.tangent;
 
-		var curvature1 = intersect.curvature;
-		var curvature2 = intersect.intersection.curvature;
-
 		if (intersectionWatcher[1][i]) {
 			t1 = intersect.intersection.time;
 			tangent1 = intersect.intersection.tangent;
@@ -354,16 +354,132 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 	}
 }
 
+globals.fromSnappy = function(geometry) {
+	// Converts the link format from the Spherogram python package, as given in OrthogonalLinkDiagram.plink_data()
+	// see https://github.com/3-manifolds/Spherogram/blob/master/spherogram_src/links/orthogonal.py
+	
+	pushUndo();
+	resetIntersections();
+	project.clear();
+
+	var points = []; // First, we construct the straight path in paperscript, ignoring the crossings.
+	for (var i = 0; i < geometry[0].length; i++) {
+		points.push(new Point(geometry[0][i]));
+	}
+
+	activeKnot = new Path({
+		segments: points,
+		strokeColor: 'black',
+		strokeWidth: window.globals.strokeWidth,
+		closed: true,
+		fullySelected: true
+	});
+
+	intersectionLayer = new Layer();
+	activeKnot.fitBounds(view.bounds);
+	activeKnot.scale(0.66)
+
+	showIntersections({}); // Next, we let paperscript detect intersections.
+	console.log(intersectionWatcher);
+	
+	intersectionIndices = []; // Lastly, we convert the intersection data.
+	for (var j = 0; j < intersectionWatcher[2].length; j++) {
+		intersectionIndices.push([Math.floor(intersectionWatcher[2][j]), Math.floor(intersectionWatcher[3][j])])
+	}
+	for (var i = 0; i < geometry[2].length; i++) {
+		var swap = false;
+		var t1 = geometry[2][i][0];
+		var t2 = geometry[2][i][1];
+		if (t1 > t2) {
+			swap = true;
+			var t1 = geometry[2][i][1];
+			var t2 = geometry[2][i][0];
+		}
+
+		for (var j = 0; j < intersectionIndices.length; j++) {
+			if (intersectionIndices[j][0] == t1 && intersectionIndices[j][1] == t2) {
+				intersectionWatcher[1][j] = swap;
+				console.log(t1,t2,j,swap);
+				break;
+			}
+		}
+	}
+
+	showIntersections({});
+	typesetInvariants();
+	pushUndo();
+}
+
+
 function hookeStep() {
-	eps = 0.1;
-	points = [NaN];
-	console.log( activeKnot.segments.length-1);
-	for (var i = 1; i < activeKnot.segments.length-1; i++) {
-		seg = activeKnot.segments[i];
-		points.push(seg.point + (seg.previous.point + seg.next.point - seg.point*2)*eps);
-	} 
-	for (var i = 1; i < activeKnot.segments.length-1; i++) {
-		activeKnot.segments[i].point = points[i];
+	var l = intersectionWatcher[2].length;
+	var eps = 0.5;
+	for (var i = 0; i < l; i++) {
+		var t11 = Math.floor(intersectionWatcher[2][i]);
+		var t12 = Math.floor(intersectionWatcher[3][i]);
+		
+		for (var j = 0; j < l; j++) {
+			if (i == j) {continue;}
+			if (intersectionWatcher[0][i].getDistance(intersectionWatcher[0][j]) > 40) {continue;}
+			var t1, t2, dir = null;
+
+			var t21 = Math.floor(intersectionWatcher[2][j]);
+			var t22 = Math.floor(intersectionWatcher[3][j]);
+			var mindist = 4;
+			if (Math.abs(t11-t21) < mindist) {
+				t1 = Math.floor(t12);
+				t2 = Math.floor(t22);
+				normal = (intersectionWatcher[0][i] - intersectionWatcher[0][j])/50
+				dir = normal*eps/(normal.length*normal.length);
+				activeKnot.segments[t1].point += dir;
+				activeKnot.segments[t1].next.point += dir;
+				activeKnot.segments[t2].point -= dir;
+				activeKnot.segments[t2].next.point -= dir; 
+			}
+			if (Math.abs(t12-t21) < mindist) {
+				t1 = Math.floor(t11);
+				t2 = Math.floor(t22);
+				normal = -(intersectionWatcher[0][i] - intersectionWatcher[0][j])/50
+				dir = normal*eps/(normal.length*normal.length);
+				activeKnot.segments[t1].point += dir;
+				activeKnot.segments[t1].next.point += dir;
+				activeKnot.segments[t2].point -= dir;
+				activeKnot.segments[t2].next.point -= dir; 
+			}
+			if (Math.abs(t11-t22) < mindist) {
+				t1 = Math.floor(t12);
+				t2 = Math.floor(t21);
+				normal = (intersectionWatcher[0][i] - intersectionWatcher[0][j])/50
+				dir = normal*eps/(normal.length*normal.length);
+				activeKnot.segments[t1].point += dir;
+				activeKnot.segments[t1].next.point += dir;
+				activeKnot.segments[t2].point -= dir;
+				activeKnot.segments[t2].next.point -= dir; 
+			}
+			if (Math.abs(t12-t22) < 4) {
+				
+				t1 = Math.floor(t21);
+				t2 = Math.floor(t11);
+				normal = -(intersectionWatcher[0][i] - intersectionWatcher[0][j])/50
+				dir = normal*eps/(normal.length*normal.length);
+				activeKnot.segments[t1].point += dir;
+				activeKnot.segments[t1].next.point += dir;
+				activeKnot.segments[t2].point -= dir;
+				activeKnot.segments[t2].next.point -= dir; 
+			}
+		}
+	}
+	var l = activeKnot.segments.length;
+	var eps = 0.1;
+	var deltas = [];
+	for (var i = 0; i < l; i++) {
+		var seg = activeKnot.segments[i];
+		var delta = (seg.previous.point + seg.next.point - seg.point*2)*eps;
+		
+		deltas.push(delta);
+	}
+	for (var i = 0; i < l; i++) {
+		activeKnot.segments[i].point += deltas[i];
 	}
 }
 
@@ -429,8 +545,7 @@ function onMouseDown(event) {
 					segments: [event.point],
 					strokeColor: 'black',
 					strokeWidth: window.globals.strokeWidth,
-					fullySelected: true,
-					data: {z: []}
+					fullySelected: true
 			});
 			intersectionLayer = new Layer();
 
@@ -522,18 +637,18 @@ function onMouseUp(event) {
 		if (globals.smooth) {drawn.simplify();}
 		drawn.simplify(15);
 		drawn.fullySelected = true;
-
 		drawn.closed = true;
 		drawing = false;
 
 		activeKnot = drawn.clone();
 		drawn.remove();
+		showIntersections({});
 		pushUndo();
 		lastMousePosition = event.point;
 	} else {
 		if (globals.smooth) activeKnot.smooth({type: 'catmull-rom', factor: 0.5});
-		typesetInvariants();
 	}
+	typesetInvariants();
 }
 
 var time = 0;

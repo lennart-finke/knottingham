@@ -42,8 +42,9 @@
 
         <p>Force Smoothness: <input id="smoothing" type="checkbox" checked="true" onchange="window.globals.smooth = this.checked;">
         | <button type="button" onclick="straighten()">Straighten</button>
-          <!-- --> <button type="button" onclick="flatten()">Flatten</button>
-          <button type="button" onclick="window.globals.simplify()">Simplify</button> 
+          <!--  <button type="button" onclick="flatten()">Flatten</button> -->
+          <button type="button" onclick="window.globals.simplify()">Simplify</button>
+          <button type="button" onclick="orthogonalise()" id="orthButton">Orthogonalize</button>
       </p>
 
         <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
@@ -124,6 +125,7 @@
       var dt = document.getElementById('dt');
       var log = document.getElementById('log');
       var gauss = document.getElementById('gauss');
+      var orthButton = document.getElementById('orthButton');
 
       smoothing.checked = showIntersections.checked = true;
       isomorphy.checked = dragging.checked = dragIndependently.checked = false;
@@ -180,6 +182,48 @@
         dl.click();
         document.body.removeChild(dl);
       }
+
+      pyodide = null;
+
+      async function orthogonalise() {
+        if (window.globals.getNumIntersections() < 3) {
+          orthButton.innerHTML = ">2 crossings needed."
+          return;
+        }
+        smoothing.checked = false;
+        if (pyodide == null) {
+          orthButton.innerHTML = "loading... [1/7]"
+          pyodide = await loadPyodide();
+          orthButton.innerHTML = "loading... [2/7]"
+          await pyodide.loadPackage("micropip");
+          orthButton.innerHTML = "loading... [3/7]"
+          const micropip = pyodide.pyimport("micropip");
+          await micropip.install("sqlite3");
+          orthButton.innerHTML = "loading... [4/7]"
+          await micropip.install('knot_floer_homology-1.2-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+          orthButton.innerHTML = "loading... [5/7]"
+          await micropip.install('snappy_manifolds-1.2-py3-none-any.whl');
+          orthButton.innerHTML = "loading... [6/7]"
+          await micropip.install('spherogram-2.2.1-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+        }
+        
+        window.DT = dt.innerHTML;
+
+        let geometry = pyodide.runPython(`
+            from spherogram.links import Link
+            from spherogram.links.orthogonal import OrthogonalLinkDiagram
+
+            from pyodide.ffi import to_js
+            from js import DT
+
+            l = Link("DT:[("+str(DT)+")]")
+            o = OrthogonalLinkDiagram(l)
+            to_js(o.plink_data())
+        `);
+        orthButton.innerHTML = "Orthogonalize"
+        window.globals.fromSnappy(geometry);
+      }
       </script>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 </body>
 </html>
