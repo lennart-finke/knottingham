@@ -77,6 +77,18 @@ globals.switchIsomorphy = function() {
 
 globals.getNumIntersections = function(){return intersectionWatcher[0].length;}
 
+var logStack = 0;
+function setLog(s) {
+	logStack += 1;
+	log.innerHTML = s;
+	setTimeout(function () {
+		logStack -= 1;
+		if (logStack == 0) {
+			log.innerHTML = "";
+		}
+	}, 5000);
+}
+
 var hitOptions = {
 	segments: true,
 	stroke: true,
@@ -242,7 +254,7 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 					if (selectedEnd ^ (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]])) {
 						popUndo();
 						illegal = true;
-						console.log("Illegal Reidemeister 2.");
+						setLog("Illegal Reidemeister 2.");
 					}
 				} else if (array.length > 2) { // Something went wrong.
 					console.log("Something unexpected happened.");
@@ -291,7 +303,7 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 					var max_coliniarity = Math.max(Math.abs(vector1.dot(vector2)), Math.abs(vector2.dot(vector3)), Math.abs(vector3.dot(vector1)));
 
 					if (max_coliniarity < 0.9999-second*second*second*second) {
-						console.log("Illegal Reidemeister 3.");
+						setLog("Illegal Reidemeister 3.");
 						illegal = true;
 						popUndo();
 					}
@@ -484,7 +496,6 @@ function hookeStep() {
 }
 
 function typesetInvariants() { // Prints the Alexander polynomial and detects when it was changed.
-	log.innerHTML = "";
 	gC = gaussCode(intersectionWatcher);
 
 	var isGaussChanged = false;
@@ -498,9 +509,9 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 		}
 	}
 	if (globals.isomorphy && discreteMove && isGaussChanged) {
-		log.innerHTML = "Isotopy could not be guaranteed after that discrete move."; discreteMove = false;
+		setLog("Isotopy could not be guaranteed after that discrete move.");
 	}
-
+	discreteMove = false;
 	gauss.innerHTML = gaussCode(intersectionWatcher);
 	dt.innerHTML = dowkerThistlethwaiteCode(intersectionWatcher).toString();
 
@@ -511,7 +522,7 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 			if (previousPolynomial == null) {
 			} else if (polyToInt(p).value != polyToInt(previousPolynomial)) {
 				popUndo();
-				log.innerHTML = "Illegal move detected! Reverting...";
+				setLog("Illegal move detected! Reverting...");
 			}
 	}
 	previousPolynomial = p;
