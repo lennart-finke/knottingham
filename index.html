@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title> Knottingham 🪢</title>
+    <title> Knottingham</title>
     <link rel="icon" href="https://fi-le.net/images/favicon.png">
     <meta author content="fi-le">
     <meta name="keywords" content="Knot Theory, Knottingham, Knots">
@@ -10,14 +10,18 @@
     <script type="text/javascript" src="lib/BigInteger.min.js"></script>
     <script type="text/javascript" src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/javascript" src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
 
     <script type="text/javascript" src="js/polynomials.js"></script>
     <script type="text/javascript" src="js/knotTools.js"></script>
     <script type="text/paperscript" canvas="canvas" src="js/canvas.js"></script>
+
+  
     <link rel="stylesheet" type="text/css" href="stylesheet.css">
 </head>
 
 <body>
+
     <div style="text-align:center;">
       <div style="margin:0px; padding:0px;">
         <canvas id="canvas" width="1000px;" height="450px;"></canvas>
@@ -27,6 +31,8 @@
       <div style="margin:1%;">
         <div style="display: grid;grid-template-columns: 1.5fr 1fr;align-items: center;">
           <p><b>Alexander Polynomial:</b> <span id="alexanderPolynomial"></span></p>
+          <p style="display:none;" id="jonesContainer"><b>Jones Polynomial:</b> <span id="jonesPolynomial"></span></p>
+          <p style="display:none;" id="homflyContainer"><b>HOMFLY Polynomial:</b> <span id="homflyPolynomial" style="font-family:monospace;"></span></p>
           <p><b>Gauss</b>: <span id="gauss" style="font-family: monospace;"></span> <br> <b>Dowker-Thislethwaite</b>: <span id="dt" style="font-family: monospace;"></span></p>
             <p id="candidates-p"><b><!--Candidates with  \(<10\) Crossings:--></b>  <span id="candidates"></span></p>
 
@@ -44,12 +50,16 @@
         | <button type="button" onclick="straighten()">Straighten</button>
           <!--  <button type="button" onclick="flatten()">Flatten</button> -->
           <button type="button" onclick="window.globals.simplify()">Simplify</button>
-          <button type="button" onclick="orthogonalise()" id="orthButton">Orthogonalize</button>
+          <button type="button" onclick="orthogonalise()" id="orthButton">Orthogonalize (slow)</button> <br>
+
       </p>
 
         <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
 
-
+      <p>
+        Additional Invariants, calculated once: <button type="button" onclick="getJones()" id="jonesButton">Jones Polynomial</button>
+        <button type="button" onclick="getHomfly()" id="homflyButton">HOMFLY Polynomial</button>
+      </p>
         <p><b>Styling:</b><br>
           Gap Width: <input type="range" min="2" max="5" value="2" step="0.1" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
           Stroke Width: <input type="range" min="1" max="10" value="3"  step="0.1" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
@@ -70,7 +80,7 @@
     </div>
 
     <div style="margin:5%;">
-      <h3>🪢🪢 Manual 🪢🪢</h3>
+      <h3>Manual</h3>
       <p><b>Knottingham</b> is a tool that lets you draw and manipulate knot diagrams, sporting a clean yet somewhat hand-drawn look. To start knotting away, you may want to follow these steps:</p>
       <ul>
         <li>Create a knot by:</li>
@@ -88,6 +98,7 @@
           <li>Moving, rotating and mirroring the knot with the <b>WASD+EQ+M</b> keys</li>
           <li>Undoing with the <b>Z</b> key</li>
           <li>Selecting it through the select button and adjust Bezier handles</li>
+          <li>Creating a <b>minimal-bend diagram</b> on the integer grid with the button "Orthogonalize". You can follow up with:</li>
           <li>Forcing smoothness (twice continuous differentiability, to be precise)</li>
           <li>Adjusting the style with the sliders</li>
         </ul>
@@ -95,12 +106,14 @@
           <ul>
             <li>Exporting it to SVG!</li>
             <li>Exporting it to JSON, to be imported back into Knottingham!</li>
-            <li>Exporting it to TikZ! (Fully customisable, but without crossing Info)</li>
+            <li>Exporting it to TikZ! (Fully customizable, but without crossing Info)</li>
           </ul>
         </li>
       </ul>
 
       Knottingham can also try <b>detecting non-Reidemeister moves</b>! Check the corresponding box and start thinking through knot equivalences. Discontious operations like smoothing or deleting segments might lead to breaking the equivalence.
+
+      The Jones and HOMLY polynomial are calculated with <a href="https://sagecell.sagemath.org/">SageCellMath</a>. To help them cover server costs incurred through websites like this, they accept contributions and donations <a href="https://github.com/sponsors/sagemath">here</a>.
       <br>
       <!--
       These features could arrive in a future version:
@@ -112,9 +125,13 @@
       -->
       <p>Any and all feedback is appreciated! You can mail to <a href="mailto:developer/at/fi-le.net">developer/at/fi-le.net</a>. <br> Knottingham is open source - you can read and contribute to the code over <a href="https://github.com/file-acomplaint/knottingham">here</a>.</p>
     </div>
+    
      <script type="text/javascript">
+      
+
       window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, independentHandles: false, smooth:false, isomorphy:false};
       var polynomial = document.getElementById('alexanderPolynomial');
+      var jonesPolynomial = document.getElementById('jonesPolynomial');
       var candidates = document.getElementById('candidates');
       var candidates_p = document.getElementById('candidates-p');
       var smoothing = document.getElementById('smoothing');
@@ -126,6 +143,8 @@
       var log = document.getElementById('log');
       var gauss = document.getElementById('gauss');
       var orthButton = document.getElementById('orthButton');
+      var jonesButton = document.getElementById('jonesButton');
+      var homflyButton = document.getElementById('homflyButton');
 
       smoothing.checked = showIntersections.checked = true;
       isomorphy.checked = dragging.checked = dragIndependently.checked = false;
@@ -184,28 +203,32 @@
       }
 
       pyodide = null;
+      
+      async function loadPyodide(display) {
+        if (pyodide == null) {
+          display.innerHTML = "loading... [1/7]";
+          pyodide = await loadPyodide();
+          display.innerHTML = "loading... [2/7]";
+          await pyodide.loadPackage("micropip");
+          display.innerHTML = "loading... [3/7]";
+          const micropip = pyodide.pyimport("micropip");
+          await micropip.install("sqlite3");
+          display.innerHTML = "loading... [4/7]";
+          await micropip.install('knot_floer_homology-1.2-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+          display.innerHTML = "loading... [5/7]";
+          await micropip.install('snappy_manifolds-1.2-py3-none-any.whl');
+          display.innerHTML = "loading... [6/7]";
+          await micropip.install('spherogram-2.2.1-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+        }
+      }
 
       async function orthogonalise() {
         if (window.globals.getNumIntersections() < 3) {
-          orthButton.innerHTML = ">2 crossings needed."
+          orthButton.innerHTML = ">2 crossings needed.";
           return;
         }
         smoothing.checked = false;
-        if (pyodide == null) {
-          orthButton.innerHTML = "loading... [1/7]"
-          pyodide = await loadPyodide();
-          orthButton.innerHTML = "loading... [2/7]"
-          await pyodide.loadPackage("micropip");
-          orthButton.innerHTML = "loading... [3/7]"
-          const micropip = pyodide.pyimport("micropip");
-          await micropip.install("sqlite3");
-          orthButton.innerHTML = "loading... [4/7]"
-          await micropip.install('knot_floer_homology-1.2-cp311-cp311-emscripten_3_1_45_wasm32.whl');
-          orthButton.innerHTML = "loading... [5/7]"
-          await micropip.install('snappy_manifolds-1.2-py3-none-any.whl');
-          orthButton.innerHTML = "loading... [6/7]"
-          await micropip.install('spherogram-2.2.1-cp311-cp311-emscripten_3_1_45_wasm32.whl');
-        }
+        loadPyodide(orthButton);
         
         window.DT = dt.innerHTML;
 
@@ -220,10 +243,82 @@
             o = OrthogonalLinkDiagram(l)
             to_js(o.plink_data())
         `);
-        orthButton.innerHTML = "Orthogonalize"
+        orthButton.innerHTML = "Orthogonalize";
         window.globals.fromSnappy(geometry);
       }
+      
+      function runSage(code, callback, display) {
+        // Using SageMathCell API adapted from
+        // https://github.com/sagemath/sagecell/blob/master/contrib/sagecell-client/sagecell-service.py
+        // The right thing to do here would be using
+        // https://github.com/sagemath/sagecell/blob/master/contrib/sagecell-client/sagecell-client.py
+        // However, the Javascript Websocket API doesn't allow headers when creating a connection, so the Jupyter-Kernel-ID cannot be sent as intended, resulting in a 403.
+        retries = 3;
+        display.innerHTML = "Loading SageCell";
+        async function executeRequest() {
+          const url = 'https://sagecell.sagemath.org/service';
+          const requestBody = {
+              code: code,
+              accepted_tos: "true"
+          };
+
+          fetch(url, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: new URLSearchParams(requestBody)
+          })
+          .then(response => response.json())
+          .then(reply => {
+              if (reply['success'] && 'stdout' in reply) {
+                  callback(reply['stdout'], display);
+              } else {
+                  console.log(reply);
+                  if (retries > 0) {
+                      setTimeout(executeRequest, 500);
+                  } else {
+                      display.innerHTML = "Connection to SageCell failed.";
+                  }
+              }
+          })
+          .catch(error => {
+            console.error(error);
+              if (retries > 0) {
+                  setTimeout(executeRequest, 500);
+              } else {
+                display.innerHTML = "Connection to SageCell failed.";
+              }
+          });
+        }
+        executeRequest();
+      }
+
+      function getJones() {
+        const code = 'K = Knots().from_dowker_code([' + dt.innerHTML +'])\nprint(K.jones_polynomial())';
+
+        runSage(code,function(result, jonesButton) {
+          jonesPolynomial.innerHTML = "\\(" + "p_J(t)=" + result.replaceAll("*", "") + "\\)";
+          if (window.MathJax) {MathJax.typeset();}
+          document.getElementById('jonesContainer').style.display = "block";
+          jonesButton.innerHTML = "Refresh Jones Polynomial" 
+        },jonesButton);
+      }
+      function getHomfly() {
+        const code = 'K = Knots().from_dowker_code([' + dt.innerHTML +"])\nprint(K.homfly_polynomial())";
+
+        runSage(code,function(result, homflyButton) {
+          document.getElementById('homflyContainer').style.display = "block";
+          homflyPolynomial.innerHTML = "p_HOM(M,L)=" + result;
+          homflyButton.innerHTML = "Refresh HOMFLY Polynomial";
+        },homflyButton);
+      }
+      
       </script>
+      
+      
       <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+
+      
 </body>
 </html>
