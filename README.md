@@ -20,15 +20,8 @@ You can give it a go yourself over [here](https://fi-le.net/knottingham).
 
  **Heritage**
  ---
-**Knottingham** was inspired by two cool tools for drawing and identifying knots, namely the [Knot Identification Tool](https://joshuahhh.com/projects/kit/) by Joshua Horowitz and [KnotFolio](https://kmill.github.io/knotfolio/index.html) by Kyle Miller. For the feature of producing a minimal orthogonal knot diagram, it uses the PyPi Module [spherogram](https://github.com/3-manifolds/Spherogram) after compilation to Webassembly to be compatible with [pyodide](https://github.com/pyodide/pyodide). Spherogram is licensed under [GNU-2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt).
+**Knottingham** was inspired by two cool tools for drawing and identifying knots, namely the [Knot Identification Tool](https://joshuahhh.com/projects/kit/) by Joshua Horowitz and [KnotFolio](https://kmill.github.io/knotfolio/index.html) by Kyle Miller. For the feature of producing a minimal orthogonal knot diagram, it uses the PyPi Module [spherogram](https://github.com/3-manifolds/Spherogram) after compilation to Webassembly to be compatible with [pyodide](https://github.com/pyodide/pyodide). Spherogram is licensed under [GNU-2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt). For more involved knot invariants using Sage, API calls to [SageCell](https://sagecell.sagemath.org/) are used.
 Knottingham renders with [paper.js](https://github.com/paperjs/paper.js). Many thanks to the authors!
-
- **In the Future**
- ---
-These features are planned:
-*   Redo
-*   Proven Non-Reidemeister Move-Detection
-*   Some more styling options
 
  **License**
  ---
