@@ -61,7 +61,7 @@
         <button type="button" onclick="getHomfly()" id="homflyButton">HOMFLY Polynomial</button>
       </p>
         <p><b>Styling:</b><br>
-          Gap Width: <input type="range" min="2" max="5" value="2" step="0.1" class="slider" onchange="window.globals.gapWidth = this.value;"><br>
+          Gap Width: <input type="range" min="2" max="5" value="2" step="0.1" class="slider" onchange="window.globals.gapWidth = this.value; window.globals.updateStyle();"><br>
           Stroke Width: <input type="range" min="1" max="10" value="3"  step="0.1" class="slider"  onchange="window.globals.strokeWidth = this.value; window.globals.updateStyle();"><br>
           Show Intersections: <input type="checkbox" id="showIntersections" onchange="window.globals.showIntersections = this.checked;">
           Drag Handles Independently: <input type="checkbox" id="dragIndependently" onchange="window.globals.independentHandles = this.checked;">
@@ -204,10 +204,10 @@
 
       pyodide = null;
       
-      async function loadPyodide(display) {
+      async function getPyodide(display) {
         if (pyodide == null) {
           display.innerHTML = "loading... [1/7]";
-          pyodide = await loadPyodide();
+          var pyodide = await loadPyodide();
           display.innerHTML = "loading... [2/7]";
           await pyodide.loadPackage("micropip");
           display.innerHTML = "loading... [3/7]";
@@ -228,7 +228,7 @@
           return;
         }
         smoothing.checked = false;
-        loadPyodide(orthButton);
+        await getPyodide(orthButton);
         
         window.DT = dt.innerHTML;
 
@@ -313,12 +313,9 @@
           homflyButton.innerHTML = "Refresh HOMFLY Polynomial";
         },homflyButton);
       }
-      
       </script>
-      
-      
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
       
 </body>
 </html>

@@ -15,6 +15,7 @@ For example, match statements, const,
 globals.updateStyle = function() {
 	activeKnot.strokeWidth = globals.strokeWidth;
 	activeKnot.strokeColor = globals.strokeColor;
+	showIntersections({});
 }
 globals.undo = function(){popUndo();}
 globals.straighten = function(){activeKnot.clearHandles();showIntersections({});globals.smooth = false;discreteMove=true;}
