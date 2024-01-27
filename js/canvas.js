@@ -17,6 +17,7 @@ globals.updateStyle = function() {
 	activeKnot.strokeColor = globals.strokeColor;
 	showIntersections({});
 }
+
 globals.undo = function(){popUndo();}
 globals.straighten = function(){activeKnot.clearHandles();showIntersections({});globals.smooth = false;discreteMove=true;}
 globals.flatten = function(){activeKnot.flatten(1);showIntersections({"spatial":true});globals.smooth = false;}
@@ -44,7 +45,7 @@ globals.select = function(){
 	activeKnot.fullySelected = !bool;
 	hitOptions.handles = true;
 }
-globals.draw = function(){drawing = true; project.clear();globals.smooth=false;}
+globals.draw = function(){drawing = true; console.log(paper.project); paper.project.clear(); paper.project._children = [];console.log(paper.project); globals.smooth=false;}
 
 globals.toTikz = function(scale) {
 	// Tikz's coordinates go down, not up
@@ -72,7 +73,7 @@ globals.toTikz = function(scale) {
 }
 
 globals.switchIsomorphy = function() {
-	previousPolynomial = null;
+	showIntersections({});
 	pushUndo();
 }
 
@@ -106,6 +107,7 @@ var hitOptions = {
 var intersectionWatcher = [[],[],[],[]];
 function resetIntersections(){intersectionWatcher = [[],[],[],[]]}
 var previousGaussCode = [-1,2,-3,4,-5,6,-1,2,-7,-8,-3,4,-5,-9,10,6,7,-11,8,-9,10,11];
+var previousPolynomial = null;
 var reidemeister3s = []; // We keep track of location and dominant direction in places with soon-to-be Reidemeister 3 moves.
 
 // Some constants
@@ -142,142 +144,77 @@ pushUndo();
 globals.switchIsomorphy();
 
 function showIntersections(kwargs) { // This detects and draws crossings. Runs every frame.
-	// First, some utility functions.
-	function getTime(seg) {return seg.time + seg.index;}
+	if (!kwargs.skipMatching) {
+		// First, some utility functions.
+		function getTime(seg) {return seg.time + seg.index;}
 
-	// The canonical metric on [0,1] where 0 is connected to 1.
-	function metric(a,b) {
-		return Math.min(Math.abs(a-b),
-						Math.abs(a-b+activeKnot.segments.length),
-						Math.abs(a-b-activeKnot.segments.length));
-	}
-
-	intersectionLayer.removeChildren();
-	intersections = activeKnot.getCrossings(activeKnot);
-
-	// Let's map observed intersections to previous intersections
-	// First, the case when an intersection was added:
-	if (intersectionWatcher[0].length < intersections.length || kwargs.spatial) {
-		var bools = Array(intersections.length).fill(false);
-		var used_indices = Array(intersections.length).fill(false);
-		for (var i = 0; i < intersectionWatcher[0].length; i++) {
-			var previous = intersectionWatcher[0][i];
-
-			// we calculate the index in //intersections// of the point that is closest to //previous//.
-			var min = 99999999999999;
-			var min_index = 0;
-			for (var k = 0; k < intersections.length; k++) {
-				var distance = intersections[k].point.getDistance(previous);
-
-				if (distance < min) {
-					min = distance;
-					min_index = k;
-				}
-			}
-			// We copy the over-under boolean from this minimal value
-			bools[min_index] = intersectionWatcher[1][i];
-			used_indices[min_index] = true;
+		// The canonical metric on [0,1] where 0 is connected to 1.
+		function metric(a,b) {
+			return Math.min(Math.abs(a-b),
+							Math.abs(a-b+activeKnot.segments.length),
+							Math.abs(a-b-activeKnot.segments.length));
 		}
 
-		var counter = 0;
-		for (var i = 0; i < used_indices.length; i++) {
-			if (!used_indices[i]) {
-				counter += 1;
-				idx = 0;
-				if (segment) {idx = segment.index;}
-				bools[i] = metric(getTime(intersections[i]), idx) >  metric(getTime(intersections[i].intersection), idx)
-			}
-		}
-		if (counter > 3) {console.log("Something unexpected happened"); illegal = true;};
-		intersectionWatcher[1] = bools;
-	}
+		intersectionLayer.removeChildren();
+		intersections = activeKnot.getCrossings(activeKnot);
 
-	// Next, the case when the number of intersections is less then or equal the previous (i.e. possibly vanished):
-	else if (intersectionWatcher[0].length >= intersections.length && !kwargs.spatial) {
-		var bools = Array(intersections.length).fill(false); // The soon-to-be booleans of the next frame, to be found out.
-		var used_indices = Array(intersectionWatcher[0].length).fill(false);
+		// Let's map observed intersections to previous intersections
+		// First, the case when an intersection was added:
+		if (intersectionWatcher[0].length < intersections.length || kwargs.spatial) {
+			var bools = Array(intersections.length).fill(false);
+			var used_indices = Array(intersections.length).fill(false);
+			for (var i = 0; i < intersectionWatcher[0].length; i++) {
+				var previous = intersectionWatcher[0][i];
 
-		for (var i = 0; i < intersections.length; i++) {
-			var intersection = intersections[i].point;
-			var intersectionTime = getTime(intersections[i]);
-			var intersectionTime2 = getTime(intersections[i].intersection);
+				// we calculate the index in //intersections// of the point that is closest to //previous//.
+				var min = 99999999999999;
+				var min_index = 0;
+				for (var k = 0; k < intersections.length; k++) {
+					var distance = intersections[k].point.getDistance(previous);
 
-			// We calculate the index in //intersectionWatcher[0]// of the point that is closest to //intersection//.
-			var min = 99999999999999;
-			var second = 99999999999998;
-			var min_index = 0;
-			var second_index = -1;
-
-			var flip = false;
-			for (var k = 0; k < intersectionWatcher[0].length; k++) {
-				var distance = metric(intersectionWatcher[2][k], intersectionTime) +  metric(intersectionWatcher[3][k], intersectionTime2);
-
-				if (distance < min) {
-					second = min;
-					second_index = min_index;
-					min = distance;
-					min_index = k;
-				}
-			}
-			// In case the intersection loops around the other side.
-			// Might be efficient to add a check whether this loop can be omitted.
-			for (var k = 0; k < intersectionWatcher[0].length; k++) {
-				var distance = metric(intersectionWatcher[3][k], intersectionTime) +  metric(intersectionWatcher[2][k], intersectionTime2) //
-				if (distance < min) {
-					second = min;
-					second_index = min_index;
-					min = distance;
-					min_index = k;
-					flip = true;
-					console.log("Intersection loops around.");
-				}
-			}
-			// We copy the over-under boolean from this minimal value
-			bools[i] = intersectionWatcher[1][min_index];
-			if (flip) {bools[i] = !bools[i]}
-
-			used_indices[min_index] = true;
-		}
-
-		var array = [];
-		var illegal = false;
-		if (globals.isomorphy) {
-			if (intersectionWatcher[0].length > intersections.length) {
-				for (var i = 0; i < used_indices.length; i++) {
-					if (!used_indices[i]) {
-						array.push(i);
+					if (distance < min) {
+						min = distance;
+						min_index = k;
 					}
 				}
-
-				// array.length == 1 is a Reidemeister 1 and nothing can break
-
-				if (array.length == 2) { // This should be a Reidemeister 2
-					if (selectedEnd ^ (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]])) {
-						popUndo();
-						illegal = true;
-						setLog("Illegal Reidemeister 2.");
-					}
-				} else if (array.length > 2) { // Something went wrong.
-					console.log("Something unexpected happened.");
-					illegal = true;
-					popUndo();
-				}
+				// We copy the over-under boolean from this minimal value
+				bools[min_index] = intersectionWatcher[1][i];
+				used_indices[min_index] = true;
 			}
 
-		  // This block is for detecting illegal Reidemeister 3 moves.
-			var closest_indices = Array(intersections.length).fill(false);
-			var second_indices = Array(intersections.length).fill(false);
-			var second_distances = Array(intersections.length).fill(false);
+			var counter = 0;
+			for (var i = 0; i < used_indices.length; i++) {
+				if (!used_indices[i]) {
+					counter += 1;
+					idx = 0;
+					if (segment) {idx = segment.index;}
+					bools[i] = metric(getTime(intersections[i]), idx) >  metric(getTime(intersections[i].intersection), idx)
+				}
+			}
+			if (counter > 3) {console.log("Something unexpected happened");};
+			intersectionWatcher[1] = bools;
+		}
+
+		// Next, the case when the number of intersections is less then or equal the previous (i.e. possibly vanished):
+		else if (intersectionWatcher[0].length >= intersections.length && !kwargs.spatial) {
+			var bools = Array(intersections.length).fill(false); // The soon-to-be booleans of the next frame, to be found out.
+			var used_indices = Array(intersectionWatcher[0].length).fill(false);
+
 			for (var i = 0; i < intersections.length; i++) {
 				var intersection = intersections[i].point;
+				var intersectionTime = getTime(intersections[i]);
+				var intersectionTime2 = getTime(intersections[i].intersection);
+
+				// We calculate the index in //intersectionWatcher[0]// of the point that is closest to //intersection//.
 				var min = 99999999999999;
 				var second = 99999999999998;
 				var min_index = 0;
 				var second_index = -1;
 
-				for (var k = 0; k < intersections.length; k++) {
-					if (k == i) continue;
-					var distance = intersections[k].point.getDistance(intersection);
+				var flip = false;
+				for (var k = 0; k < intersectionWatcher[0].length; k++) {
+					var distance = metric(intersectionWatcher[2][k], intersectionTime) +  metric(intersectionWatcher[3][k], intersectionTime2);
+
 					if (distance < min) {
 						second = min;
 						second_index = min_index;
@@ -285,36 +222,103 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 						min_index = k;
 					}
 				}
+				// In case the intersection loops around the other side.
+				// Might be efficient to add a check whether this loop can be omitted.
+				for (var k = 0; k < intersectionWatcher[0].length; k++) {
+					var distance = metric(intersectionWatcher[3][k], intersectionTime) +  metric(intersectionWatcher[2][k], intersectionTime2) //
+					if (distance < min) {
+						second = min;
+						second_index = min_index;
+						min = distance;
+						min_index = k;
+						flip = true;
+						console.log("Intersection loops around.");
+					}
+				}
+				// We copy the over-under boolean from this minimal value
+				bools[i] = intersectionWatcher[1][min_index];
+				if (flip) {bools[i] = !bools[i]}
 
-				closest_indices[i] = min_index;
-				second_indices[i] = second_index;
-				second_distances[i] = second;
+				used_indices[min_index] = true;
 			}
 
-			for (var i = 0; i < intersections.length; i++) {
-				intersection = intersections[i];
-				closest_index = closest_indices[i];
-				second_index = second_indices[i];
-				second = second_distances[i] / REIDEMEISTER_DISTANCE_THRESHOLD;
-				if (second < 1) {
-					var vector1 = bools[i] ? intersection.tangent : intersection.intersection.tangent;
-					var vector2 = bools[closest_index] ? intersections[closest_index].tangent : intersections[closest_index].intersection.tangent;
-					var vector3 = bools[second_index] ? intersections[second_index].tangent : intersections[second_index].intersection.tangent;
+			var array = [];
+			var illegal = false;
+			if (globals.isomorphy) {
+				if (intersectionWatcher[0].length > intersections.length) {
+					for (var i = 0; i < used_indices.length; i++) {
+						if (!used_indices[i]) {
+							array.push(i);
+						}
+					}
 
-					var max_coliniarity = Math.max(Math.abs(vector1.dot(vector2)), Math.abs(vector2.dot(vector3)), Math.abs(vector3.dot(vector1)));
+					// array.length == 1 is a Reidemeister 1 and nothing can break
 
-					if (max_coliniarity < 0.9999-second*second*second*second) {
-						setLog("Illegal Reidemeister 3.");
+					if (array.length == 2) { // This should be a Reidemeister 2
+						if (selectedEnd ^ (intersectionWatcher[1][array[0]] != intersectionWatcher[1][array[1]])) {
+							popUndo();
+							illegal = true;
+							setLog("Illegal Reidemeister 2.");
+						}
+					} else if (array.length > 2) { // Something went wrong.
+						console.log("Something unexpected happened...");
 						illegal = true;
-						popUndo();
+						if (undoStack.length > 0) globals.fromJSON(undoStack.pop());
+					}
+				}
+
+				// This block is for detecting illegal Reidemeister 3 moves.
+				var closest_indices = Array(intersections.length).fill(false);
+				var second_indices = Array(intersections.length).fill(false);
+				var second_distances = Array(intersections.length).fill(false);
+				for (var i = 0; i < intersections.length; i++) {
+					var intersection = intersections[i].point;
+					var min = 99999999999999;
+					var second = 99999999999998;
+					var min_index = 0;
+					var second_index = -1;
+
+					for (var k = 0; k < intersections.length; k++) {
+						if (k == i) continue;
+						var distance = intersections[k].point.getDistance(intersection);
+						if (distance < min) {
+							second = min;
+							second_index = min_index;
+							min = distance;
+							min_index = k;
+						}
+					}
+
+					closest_indices[i] = min_index;
+					second_indices[i] = second_index;
+					second_distances[i] = second;
+				}
+
+				for (var i = 0; i < intersections.length; i++) {
+					intersection = intersections[i];
+					closest_index = closest_indices[i];
+					second_index = second_indices[i];
+					second = second_distances[i] / REIDEMEISTER_DISTANCE_THRESHOLD;
+					if (second < 1) {
+						var vector1 = bools[i] ? intersection.tangent : intersection.intersection.tangent;
+						var vector2 = bools[closest_index] ? intersections[closest_index].tangent : intersections[closest_index].intersection.tangent;
+						var vector3 = bools[second_index] ? intersections[second_index].tangent : intersections[second_index].intersection.tangent;
+
+						var max_coliniarity = Math.max(Math.abs(vector1.dot(vector2)), Math.abs(vector2.dot(vector3)), Math.abs(vector3.dot(vector1)));
+
+						if (max_coliniarity < 0.9999-second*second*second*second) {
+							setLog("Illegal Reidemeister 3.");
+							illegal = true;
+							popUndo();
+						}
 					}
 				}
 			}
-		}
 
-		if (!illegal) {
-			resetIntersections();
-			intersectionWatcher[1] = bools;
+			if (!illegal) {
+				resetIntersections();
+				intersectionWatcher[1] = bools;
+			}
 		}
 	}
 
@@ -358,20 +362,24 @@ function showIntersections(kwargs) { // This detects and draws crossings. Runs e
 				data: {kind: 'intersection', i1: i, path: path},
 				locked: globals.isomorphy || !window.globals.showIntersections
 		});
+		intersectionLayer.addChild(path);
 		var path2 = new Path({
 				segments: segments2,
 				strokeColor: window.globals.showIntersections ? (intersectionWatcher[1][i] ? 'red' : 'blue') : window.globals.strokeColor,
 				strokeWidth: window.globals.strokeWidth,
 				locked: true
 		});
+		intersectionLayer.addChild(path2);
 	}
 }
 
 globals.fromSnappy = function(geometry) {
 	// Converts the link format from the Spherogram python package, as given in OrthogonalLinkDiagram.plink_data()
 	// see https://github.com/3-manifolds/Spherogram/blob/master/spherogram_src/links/orthogonal.py
-	
-	pushUndo();
+	var iso = globals.isomorphy;
+	globals.isomorphy = false;
+	globals.knotImported = true;
+	this.switchIsomorphy();
 	resetIntersections();
 	project.clear();
 
@@ -393,8 +401,7 @@ globals.fromSnappy = function(geometry) {
 	activeKnot.scale(0.66)
 
 	showIntersections({}); // Next, we let paperscript detect intersections.
-	console.log(intersectionWatcher);
-	
+
 	intersectionIndices = []; // Lastly, we convert the intersection data.
 	for (var j = 0; j < intersectionWatcher[2].length; j++) {
 		intersectionIndices.push([Math.floor(intersectionWatcher[2][j]), Math.floor(intersectionWatcher[3][j])])
@@ -412,15 +419,16 @@ globals.fromSnappy = function(geometry) {
 		for (var j = 0; j < intersectionIndices.length; j++) {
 			if (intersectionIndices[j][0] == t1 && intersectionIndices[j][1] == t2) {
 				intersectionWatcher[1][j] = swap;
-				console.log(t1,t2,j,swap);
 				break;
 			}
 		}
 	}
 
-	showIntersections({});
+	showIntersections({"skipMatching":true});
+	previousPolynomial = alexanderPolynomial(intersectionWatcher, activeKnot);
 	typesetInvariants();
 	pushUndo();
+	globals.isomorphy = iso;
 }
 
 
@@ -520,12 +528,16 @@ function typesetInvariants() { // Prints the Alexander polynomial and detects wh
 	var p = alexanderPolynomial(intersectionWatcher, activeKnot);
 	polynomial.innerHTML = alexanderString(p);
 	if (globals.isomorphy) {
-			if (previousPolynomial == null) {
-			} else if (polyToInt(p).value != polyToInt(previousPolynomial)) {
-				popUndo();
+			if (previousPolynomial == null || globals.knotImported) {
+			} else if (polyToInt(p).value != polyToInt(previousPolynomial).value) {
+				console.log(p, previousPolynomial);
+				previousPolynomial = null;
+				if (undoStack.length > 0) globals.fromJSON(undoStack.pop());
 				setLog("Illegal move detected! Reverting...");
 			}
 	}
+	
+	globals.knotImported = false;
 	previousPolynomial = p;
 	previousGaussCode = gC;
 	candidates.innerHTML = "";

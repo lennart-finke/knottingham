@@ -41,7 +41,7 @@
 
         <hr>
         <p>
-          <button type="button" onclick="window.globals.draw(); isomorphy.checked = false; smoothing.checked = false; window.globals.switchIsomorphy();window.globals.isomorphy = false;"><b>Draw from Scratch</b></button>
+          <button type="button" onclick="window.globals.draw(); isomorphy.checked = false; smoothing.checked = false; window.globals.switchIsomorphy(); window.globals.isomorphy = false;"><b>Draw from Scratch</b></button>
           <button type="button" onclick="window.globals.select()">Show / Hide Bezier Handles</button>
           <button type="button" onclick="window.globals.undo()">Undo</button>
         </p>
@@ -50,11 +50,11 @@
         | <button type="button" onclick="straighten()">Straighten</button>
           <!--  <button type="button" onclick="flatten()">Flatten</button> -->
           <button type="button" onclick="window.globals.simplify()">Simplify</button>
-          <button type="button" onclick="orthogonalise()" id="orthButton">Orthogonalize (slow)</button> <br>
+          <button type="button" onclick="orthogonalise(this, dt.innerHTML, 'DT')" id="orthButton">Orthogonalize (slow)</button> <br>
 
       </p>
 
-        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <span style="">Try reverting Non-Reidemeister moves:</span> <input type="checkbox" id="isomorphy" checked="false"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
+        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <b>Try reverting Non-Reidemeister moves:</b> <input type="checkbox" id="isomorphy" checked="true"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
 
       <p>
         Additional Invariants, calculated once: <button type="button" onclick="getJones()" id="jonesButton">Jones Polynomial</button>
@@ -70,11 +70,14 @@
         <hr>
 
         <p><b>Exporting:</b>
-          <button type="button" onclick="toSVG()">Export to SVG</button>
-          <button type="button" onclick="toJSON()">Export to JSON</button>
-          <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!)'">Export to TikZ</button> <br>
-          <b>Importing JSON:</b> <input type="file" id="file" accept=".JSON,.json,.knottingham"name="Load a JSON file" oninput="readJSON(this.files[0])">
-
+          <button type="button" onclick="toSVG();">To SVG</button>
+          <button type="button" onclick="toJSON();">To JSON</button>
+          <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!);'">To TikZ</button> <br>
+          <b>Importing:</b>
+          <button onclick="orthogonalise(this, dtInput.value, 'DT');">From DT code:</button> <input type="text" id="dtInput" placeholder="4, 6, 2"> 
+          <button onclick="orthogonalise(this, rolfsenInput.value, 'Rolfsen');">From Rolfsen Table:</button> <input type="text" id="rolfsenInput" placeholder="10_161"> 
+          <p>From Knottingham JSON: </p><input type="file" id="file" accept=".JSON,.json,.knottingham"name="Load a Knottingham JSON file" oninput="readJSON(this.files[0])">
+          
         </p>
       </div>
     </div>
@@ -129,7 +132,7 @@
      <script type="text/javascript">
       
 
-      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, independentHandles: false, smooth:false, isomorphy:false};
+      window.globals = {neighbors:0, strokeWidth:5, gapWidth:2, strokeColor:'black', showIntersections:true, independentHandles: false, smooth:false, isomorphy:true};
       var polynomial = document.getElementById('alexanderPolynomial');
       var jonesPolynomial = document.getElementById('jonesPolynomial');
       var candidates = document.getElementById('candidates');
@@ -145,6 +148,8 @@
       var orthButton = document.getElementById('orthButton');
       var jonesButton = document.getElementById('jonesButton');
       var homflyButton = document.getElementById('homflyButton');
+      var dtInput = document.getElementById('dtInput');
+      var rolfsenInput = document.getElementById('rolfsenInput');
 
       smoothing.checked = showIntersections.checked = true;
       isomorphy.checked = dragging.checked = dragIndependently.checked = false;
@@ -202,12 +207,12 @@
         document.body.removeChild(dl);
       }
 
-      pyodide = null;
+      var pyodide = null;
       
       async function getPyodide(display) {
         if (pyodide == null) {
           display.innerHTML = "loading... [1/7]";
-          var pyodide = await loadPyodide();
+          pyodide = await loadPyodide();
           display.innerHTML = "loading... [2/7]";
           await pyodide.loadPackage("micropip");
           display.innerHTML = "loading... [3/7]";
@@ -222,28 +227,34 @@
         }
       }
 
-      async function orthogonalise() {
+      async function orthogonalise(button, code, codeType) {
+        var initialString = button.innerHTML;
+
         if (window.globals.getNumIntersections() < 3) {
-          orthButton.innerHTML = ">2 crossings needed.";
+          button.innerHTML = ">2 crossings needed.";
           return;
         }
         smoothing.checked = false;
-        await getPyodide(orthButton);
+        await getPyodide(button);
         
-        window.DT = dt.innerHTML;
+
+        if (codeType == "DT") {
+          linkString = "DT:[("+code+")]";
+        } else if (codeType == "Rolfsen") {
+          linkString = code;
+        }
 
         let geometry = pyodide.runPython(`
             from spherogram.links import Link
             from spherogram.links.orthogonal import OrthogonalLinkDiagram
 
             from pyodide.ffi import to_js
-            from js import DT
 
-            l = Link("DT:[("+str(DT)+")]")
+            l = Link("` + linkString + `")
             o = OrthogonalLinkDiagram(l)
             to_js(o.plink_data())
         `);
-        orthButton.innerHTML = "Orthogonalize";
+        button.innerHTML = initialString;
         window.globals.fromSnappy(geometry);
       }
       
