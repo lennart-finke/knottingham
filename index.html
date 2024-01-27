@@ -35,8 +35,6 @@
           <p style="display:none;" id="homflyContainer"><b>HOMFLY Polynomial:</b> <span id="homflyPolynomial" style="font-family:monospace;"></span></p>
           <p><b>Gauss</b>: <span id="gauss" style="font-family: monospace;"></span> <br> <b>Dowker-Thislethwaite</b>: <span id="dt" style="font-family: monospace;"></span></p>
             <p id="candidates-p"><b><!--Candidates with  \(<10\) Crossings:--></b>  <span id="candidates"></span></p>
-
-
         </div>
 
         <hr>
@@ -50,7 +48,7 @@
         | <button type="button" onclick="straighten()">Straighten</button>
           <!--  <button type="button" onclick="flatten()">Flatten</button> -->
           <button type="button" onclick="window.globals.simplify()">Simplify</button>
-          <button type="button" onclick="orthogonalise(this, dt.innerHTML, 'DT')" id="orthButton">Orthogonalize (slow)</button> <br>
+          <button type="button" onclick="orthogonalise(this, dt.innerHTML, 'DT', 'Orthogonalize', 'Error')" id="orthButton">Orthogonalize (slow)</button> <br>
 
       </p>
 
@@ -74,8 +72,8 @@
           <button type="button" onclick="toJSON();">To JSON</button>
           <button type="button" onclick="toTikz(); this.innerHTML='Export to TikZ (Copied to Clipboard!);'">To TikZ</button> <br>
           <b>Importing:</b>
-          <button onclick="orthogonalise(this, dtInput.value, 'DT');">From DT code:</button> <input type="text" id="dtInput" placeholder="4, 6, 2"> 
-          <button onclick="orthogonalise(this, rolfsenInput.value, 'Rolfsen');">From Rolfsen Table:</button> <input type="text" id="rolfsenInput" placeholder="10_161"> 
+          <button onclick="orthogonalise(this, dtInput.value, 'DT', 'From DT code:', 'Error: Try again in the format `x y z ...`');">From DT code:</button> <input type="text" id="dtInput" placeholder="4 6 2"> 
+          <button onclick="orthogonalise(this, rolfsenInput.value, 'Rolfsen', 'From Rolfsen Table:', 'Error: Try again in the format x_y');">From Rolfsen Table:</button> <input type="text" id="rolfsenInput" placeholder="10_161"> 
           <p>From Knottingham JSON: </p><input type="file" id="file" accept=".JSON,.json,.knottingham"name="Load a Knottingham JSON file" oninput="readJSON(this.files[0])">
           
         </p>
@@ -227,9 +225,7 @@
         }
       }
 
-      async function orthogonalise(button, code, codeType) {
-        var initialString = button.innerHTML;
-
+      async function orthogonalise(button, code, codeType, successString, errorString) {
         if (window.globals.getNumIntersections() < 3) {
           button.innerHTML = ">2 crossings needed.";
           return;
@@ -239,12 +235,19 @@
         
 
         if (codeType == "DT") {
-          linkString = "DT:[("+code+")]";
+          if (code == "") {
+            code = "4 6 2";
+          }
+          linkString = "DT:[("+code.replaceAll(" ", ", ")+")]";
         } else if (codeType == "Rolfsen") {
+          if (code == "") {
+            code = "10_161";
+          }
           linkString = code;
         }
 
-        let geometry = pyodide.runPython(`
+        try {
+          let geometry = pyodide.runPython(`
             from spherogram.links import Link
             from spherogram.links.orthogonal import OrthogonalLinkDiagram
 
@@ -252,10 +255,13 @@
 
             l = Link("` + linkString + `")
             o = OrthogonalLinkDiagram(l)
-            to_js(o.plink_data())
-        `);
-        button.innerHTML = initialString;
-        window.globals.fromSnappy(geometry);
+            to_js(o.plink_data())`);
+          window.globals.fromSnappy(geometry);
+          button.innerHTML = successString;
+        } catch(err) {
+          console.error(err);
+          button.innerHTML = errorString;
+        }
       }
       
       function runSage(code, callback, display) {
