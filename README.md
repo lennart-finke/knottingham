@@ -20,7 +20,7 @@ You can give it a go yourself over [here](https://fi-le.net/knottingham).
 
  **Local Execution / Development**
 ---
-A local setup is as easy as cloning the repository, running a webserver in the base directory e.g. with `python3 -m http.server 8000` and opening a browser window on [http://localhost:8000](http://localhost:8000).
+For a local setup, clone the repository, run a webserver in the base directory for example with `python3 -m http.server 8000` and open a browser window on [http://localhost:8000](http://localhost:8000).
 
  **Heritage**
  ---
