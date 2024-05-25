@@ -52,7 +52,7 @@
 
       </p>
 
-        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <b>Try reverting Non-Reidemeister moves:</b> <input type="checkbox" id="isomorphy" checked="true"  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
+        <p>Drag Neighboring Points: <input id="dragging" type="checkbox" checked="false"  onchange="window.globals.neighbors = this.checked ? 2 : 0;"> | <b>Try reverting Non-Reidemeister moves:</b> <input type="checkbox" id="isomorphy" checked="true",  onchange="window.globals.isomorphy = this.checked; window.globals.switchIsomorphy();"></p>
 
       <p>
         Additional Invariants, calculated once: <button type="button" onclick="getJones()" id="jonesButton">Jones Polynomial</button>
@@ -88,7 +88,7 @@
         <ul>
           <li>Clicking on segments to add new nodes</li>
           <li>Clicking and dragging nodes to move them (you can use 'Drag Neighbors' to rescue nodes from below crossings)</li>
-          <li>and finally <b>clicking on the (red) crossings to switch them.</b></li>
+          <li>and finally <b>clicking on the (red) crossings to switch them</b> (with "try reverting Non-Reidemeister moves" turned off)</li>
           <li>or importing JSON</li>
           <li><b>or clicking on 'Drawing' to draw a new knot from scratch</b>!</li>
         </ul>
@@ -149,8 +149,8 @@
       var dtInput = document.getElementById('dtInput');
       var rolfsenInput = document.getElementById('rolfsenInput');
 
-      smoothing.checked = showIntersections.checked = true;
-      isomorphy.checked = dragging.checked = dragIndependently.checked = false;
+      isomorphy.checked = smoothing.checked = showIntersections.checked = true;
+      dragging.checked = dragIndependently.checked = false;
 
       function flatten() {
         smoothing.checked = false;
