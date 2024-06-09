@@ -29,7 +29,7 @@ Knottingham renders with [paper.js](https://github.com/paperjs/paper.js). Many t
 
  **How it Works**
 ---
-You can read the preprint about Knottingham, which is currently under peer review for the *IEEE Transactions on Visualization and Computer Graphics*, [here](https://arxiv.org/abs/2309.00445).
+You can read the preprint about Knottingham [here](https://arxiv.org/abs/2309.00445) or the finished paper in the [*IEEE Transactions on Visualization and Computer Graphics*](https://ieeexplore.ieee.org/document/10538424). 
 
  **License**
 ---
