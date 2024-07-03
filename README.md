@@ -18,9 +18,21 @@ other features include:
 
 You can give it a go yourself over [here](https://fi-le.net/knottingham).
 
+If Knottingham helped you with your research or teaching, we are very happy to be cited as
+```
+@article{finke2024,
+  author={Finke, Lennart and Weitz, Edmund},
+  journal={IEEE Transactions on Visualization and Computer Graphics}, 
+  title={A Phenomenological Approach to Interactive Knot Diagrams}, 
+  year={2024},
+  volume={30},
+  number={8},
+  pages={5901-5907},
+  doi={10.1109/TVCG.2024.3405369}}
+```
  **Local Execution / Development**
 ---
-For a local setup, clone the repository, run a webserver in the base directory for example with `python3 -m http.server 8000` and open a browser window on [http://localhost:8000](http://localhost:8000).
+For a local setup, clone the repository, run a webserver in the base directory for example with `python3 -m http.server 8000` and open a browser window on [http://localhost:8000](http://localhost:8000). Contributions or suggestions are of course welcome.
 
  **Heritage**
  ---
