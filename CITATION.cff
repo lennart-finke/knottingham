@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: If you use this software, please cite both the article from preferred-citation and the software itself.
+authors:
+  - family-names: Finke
+    given-names: Lennart
+  - family-names: Weitz
+    given-names: Edmund
+title: A Phenomenological Approach to Interactive Knot Diagrams
+version: 1.0.0
+date-released: '2024-12-04'
+url: "https://github.com/lennart-finke/knottingham"
+preferred-citation:
+  authors:
+    - family-names: Finke
+      given-names: Lennart
+    - family-names: Weitz
+      given-names: Edmund
+  title: A Phenomenological Approach to Interactive Knot Diagrams
+  type: article-journal
+  year: '2024'
+  conference: {}
+  publisher:
+    name: IEEE
