@@ -22,6 +22,54 @@ globals.undo = function(){popUndo();}
 globals.straighten = function(){activeKnot.clearHandles();showIntersections({});globals.smooth = false;discreteMove=true;}
 globals.flatten = function(){activeKnot.flatten(1);showIntersections({"spatial":true});globals.smooth = false;}
 globals.simplify = function(){activeKnot.simplify(0.3);showIntersections({});globals.smooth = false;}
+globals.reflect = function() {
+	// Mirror the knot horizontally
+	activeKnot.scale(-1, 1);
+
+	// Mirror the intersection points
+	var x_average = activeKnot.bounds.x + activeKnot.bounds.width/2;
+	for (var k = 0; k < intersectionWatcher[0].length; k++) {
+		intersectionWatcher[0][k].x += 2 * (x_average - intersectionWatcher[0][k].x);
+	}
+	
+	showIntersections({});
+	pushUndo();
+}
+globals.makeAlternating = function() {
+	// Get all intersection times and sort them
+	var intersectionTimes = [];
+	for (var i = 0; i < window.globals.getNumIntersections(); i++) {
+		// Add both times for each intersection
+		intersectionTimes.push({
+		index: i,
+		time: intersectionWatcher[2][i],
+		isFirst: true
+		});
+		intersectionTimes.push({
+		index: i,
+		time: intersectionWatcher[3][i],
+		isFirst: false
+		});
+	}
+
+	// Sort by time along the curve
+	intersectionTimes.sort(function(a, b) { return a.time - b.time; });
+
+	// Assign alternating over/under
+	var isOver = true; // Start with going over
+	for (var i = 0; i < intersectionTimes.length; i++) {
+		var crossing = intersectionTimes[i];
+		if (crossing.isFirst) {
+		// When we encounter the first point of a crossing, set its boolean
+		intersectionWatcher[1][crossing.index] = isOver;
+		}
+		isOver = !isOver; // Alternate for next crossing
+	}
+
+	// Update display
+	window.globals.switchIsomorphy();
+	pushUndo();
+}
 globals.toSVG = function(){return project.exportSVG({bounds:'content'});}
 globals.toJSON = function() { // Does not work for multiple knots
 	var obj = activeKnot.exportJSON({asString:false});
