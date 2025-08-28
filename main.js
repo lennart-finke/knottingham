@@ -49,6 +49,32 @@
         // https://stackoverflow.com/questions/23218174/how-do-i-save-export-an-svg-file-after-creating-an-svg-with-d3-js-ie-safari-an
         var svg =  window.globals.toSVG();
 
+        // Sanitize empty stroke-dasharray attributes which some tools reject
+        (function sanitizeSVGDashArrays(root) {
+          if (!root) return;
+          function fixNode(node) {
+            if (!node || !node.getAttribute) return;
+            if (node.hasAttribute && node.hasAttribute('stroke-dasharray')) {
+              var val = node.getAttribute('stroke-dasharray');
+              if (val === null || /^\s*$/.test(val)) {
+                node.setAttribute('stroke-dasharray', 'none');
+              }
+            }
+            var style = node.getAttribute('style');
+            if (style && /stroke-dasharray\s*:\s*;/.test(style)) {
+              node.setAttribute('style', style.replace(/stroke-dasharray\s*:\s*;?/g, 'stroke-dasharray:none;'));
+            }
+          }
+          // Check the root and then traverse descendants
+          fixNode(root);
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+          var current = walker.nextNode();
+          while (current) {
+            fixNode(current);
+            current = walker.nextNode();
+          }
+        })(svg);
+
         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         var svgData = svg.outerHTML;
         var preface = '<?xml version="1.0" standalone="no"?>\r\n';
