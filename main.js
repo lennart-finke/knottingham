@@ -49,20 +49,53 @@
         // https://stackoverflow.com/questions/23218174/how-do-i-save-export-an-svg-file-after-creating-an-svg-with-d3-js-ie-safari-an
         var svg =  window.globals.toSVG();
 
-        // Sanitize empty stroke-dasharray attributes which some tools reject
-        (function sanitizeSVGDashArrays(root) {
+        // Sanitize SVG: remove unneeded attributes with empty or "none" values
+        // Keep fill="none" (it changes appearance), drop others like font-*, stroke-dasharray, etc.
+        (function sanitizeSVGAttributes(root) {
           if (!root) return;
           function fixNode(node) {
             if (!node || !node.getAttribute) return;
-            if (node.hasAttribute && node.hasAttribute('stroke-dasharray')) {
-              var val = node.getAttribute('stroke-dasharray');
-              if (val === null || /^\s*$/.test(val)) {
-                node.setAttribute('stroke-dasharray', 'none');
+            if (node.attributes && node.attributes.length) {
+              var toRemove = [];
+              for (var ai = 0; ai < node.attributes.length; ai++) {
+                var attr = node.attributes[ai];
+                if (!attr) continue;
+                var name = attr.name;
+                var val = attr.value == null ? '' : String(attr.value);
+                var isNone = /^\s*none\s*$/i.test(val);
+                var isEmpty = /^\s*$/.test(val);
+                // Preserve fill="none"; remove other empty/none attributes
+                if ((isNone || isEmpty) && name !== 'fill') {
+                  toRemove.push(name);
+                }
+              }
+              for (var ri = 0; ri < toRemove.length; ri++) {
+                node.removeAttribute(toRemove[ri]);
               }
             }
+            // Clean inline style: drop properties with empty or none values (except fill:none)
             var style = node.getAttribute('style');
-            if (style && /stroke-dasharray\s*:\s*;/.test(style)) {
-              node.setAttribute('style', style.replace(/stroke-dasharray\s*:\s*;?/g, 'stroke-dasharray:none;'));
+            if (style) {
+              var cleaned = style
+                .split(';')
+                .map(function(rule){return rule.trim();})
+                .filter(function(rule){
+                  if (!rule) return false;
+                  var parts = rule.split(':');
+                  if (parts.length < 2) return false;
+                  var prop = parts[0].trim().toLowerCase();
+                  var value = parts.slice(1).join(':').trim();
+                  var isNone = /^none$/i.test(value);
+                  var isEmpty = value === '';
+                  if (prop === 'fill' && isNone) return true; // keep fill:none
+                  return !(isNone || isEmpty);
+                })
+                .join('; ');
+              if (cleaned) {
+                node.setAttribute('style', cleaned);
+              } else {
+                node.removeAttribute('style');
+              }
             }
           }
           // Check the root and then traverse descendants
