@@ -146,11 +146,14 @@
           const micropip = pyodide.pyimport("micropip");
           await micropip.install("sqlite3");
           display.innerHTML = "loading... [4/7]";
-          await micropip.install('knot_floer_homology-1.2-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+          // Construct full URLs for wheel files
+          const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+          // Install knot_floer_homology first (dependency of snappy_manifolds)
+          await micropip.install(baseUrl + 'wheels/knot_floer_homology-1.2.1-cp312-cp312-pyodide_2024_0_wasm32.whl');
           display.innerHTML = "loading... [5/7]";
-          await micropip.install('snappy_manifolds-1.2-py3-none-any.whl');
+          await micropip.install(baseUrl + 'wheels/snappy_manifolds-1.2-py3-none-any.whl');
           display.innerHTML = "loading... [6/7]";
-          await micropip.install('spherogram-2.2.1-cp311-cp311-emscripten_3_1_45_wasm32.whl');
+          await micropip.install(baseUrl + 'wheels/spherogram-2.2.1-cp312-cp312-pyodide_2024_0_wasm32.whl');
         }
       }
 
